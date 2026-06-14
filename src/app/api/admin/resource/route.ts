@@ -1,11 +1,11 @@
 export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { verifyResource, updateResource, createResource } from "@/lib/queries";
+import { verifyResource, updateResource, createResource, deleteResource } from "@/lib/queries";
 
 const schema = z.object({
   id: z.number().optional(),
-  action: z.enum(["verify", "update", "create"]),
+  action: z.enum(["verify", "update", "create", "delete"]),
   url: z.string().optional(),
   fields: z.record(z.any()).optional(),
 });
@@ -17,6 +17,7 @@ export async function POST(req: Request) {
   if (action === "verify" && id != null) await verifyResource(id, url);
   else if (action === "update" && id != null && fields) await updateResource(id, fields as any);
   else if (action === "create" && fields) await createResource(fields as any);
+  else if (action === "delete" && id != null) await deleteResource(id);
   else return NextResponse.json({ error: "Bad request" }, { status: 400 });
   return NextResponse.json({ ok: true });
 }

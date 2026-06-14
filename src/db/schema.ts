@@ -98,6 +98,7 @@ export const discoveries = pgTable("discoveries", {
   license: text("license"),
   availability: text("availability"),
   relatedTags: jsonb("related_tags").$type<string[]>().default([]),
+  relatedProducts: jsonb("related_products").$type<{ name: string; seller?: string; price?: string; url?: string }[]>().default([]),
   aiScore: integer("ai_score").default(0),
   flag: text("flag"),                          // sponsored | risk | dup | null
   isSponsored: boolean("is_sponsored").default(false),

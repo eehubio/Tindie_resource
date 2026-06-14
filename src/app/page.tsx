@@ -2,7 +2,7 @@ import Link from "next/link";
 import { TindieHeader, TindieFooter } from "@/components/Chrome";
 import { DiscoveryGrid } from "@/components/Discovery";
 import { SubmitButton } from "@/components/PublicWidgets";
-import { FeaturedCards, BrowseFilterCard, FeaturedThisWeek } from "@/components/HomeSections";
+import { FeaturedCards, FeaturedThisWeek } from "@/components/HomeSections";
 import { BrowseAndDirectory } from "@/components/DirectoryTabs";
 import { getPublishedDiscoveries, getResources, getUserSaves } from "@/lib/queries";
 import { auth } from "@/lib/auth";
@@ -18,7 +18,7 @@ export default async function HomePage() {
     userId ? getUserSaves(userId) : Promise.resolve([] as number[]),
   ]);
   const topDiscoveries = (discoveries as any[]).slice(0, 6);
-  const HERO_CHIPS: [string, string, string][] = [["</>", "Open Source", "open-source"], ["✎", "Design Tools", "tools"], ["🏭", "Manufacturing", "manufacturing"], ["👥", "Marketplace", "crowdfunding"], ["⬡", "Components", "components"]];
+  const HERO_CHIPS: [string, string, string][] = [["⬡", "Sourcing", "components"], ["✎", "Designing", "tools"], ["🏭", "Manufacturing", "manufacturing"], ["</>", "Sharing", "open-source"], ["◆", "Selling", "crowdfunding"]];
 
   return (
     <>
@@ -42,9 +42,8 @@ export default async function HomePage() {
           </div>
           <Mascot />
         </div>
-        <div className="wrap" style={{ padding: "8px 24px 28px", display: "grid", gridTemplateColumns: "1fr 230px", gap: 18, alignItems: "start" }}>
+        <div className="wrap" style={{ padding: "8px 24px 28px" }}>
           <FeaturedCards />
-          <BrowseFilterCard />
         </div>
       </div>
 

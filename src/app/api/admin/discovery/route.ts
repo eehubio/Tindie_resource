@@ -1,20 +1,23 @@
 export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { approveDiscovery, rejectDiscovery, updateDiscovery } from "@/lib/queries";
+import { approveDiscovery, rejectDiscovery, updateDiscovery, getComments, deleteComment } from "@/lib/queries";
 
 const schema = z.object({
   id: z.number(),
-  action: z.enum(["approve", "reject", "update"]),
+  action: z.enum(["approve", "reject", "update", "comments", "deleteComment"]),
   fields: z.record(z.any()).optional(),
+  commentId: z.number().optional(),
 });
 
 export async function POST(req: Request) {
   const parsed = schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
-  const { id, action, fields } = parsed.data;
+  const { id, action, fields, commentId } = parsed.data;
   if (action === "approve") await approveDiscovery(id);
   else if (action === "reject") await rejectDiscovery(id);
   else if (action === "update" && fields) await updateDiscovery(id, fields as any);
+  else if (action === "comments") return NextResponse.json({ ok: true, comments: await getComments(id) });
+  else if (action === "deleteComment" && commentId != null) await deleteComment(commentId);
   return NextResponse.json({ ok: true });
 }

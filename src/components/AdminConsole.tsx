@@ -6,8 +6,8 @@ import { DAILY_TARGET, taxName, TAXONOMY } from "@/lib/taxonomy";
 type Disc = any; type Res = any; type Src = any; type Sub = any;
 type Stats = { needsReview: number; scheduled: number; approvedToday: number; brokenLinks: number };
 
-export function AdminConsole({ inbox, resources, sources, submissions, stats }:
-  { inbox: Disc[]; resources: Res[]; sources: Src[]; submissions: Sub[]; stats: Stats }) {
+export function AdminConsole({ inbox, published, resources, sources, submissions, stats }:
+  { inbox: Disc[]; published: Disc[]; resources: Res[]; sources: Src[]; submissions: Sub[]; stats: Stats }) {
   const router = useRouter();
   const [tab, setTab] = useState<"dash" | "inbox" | "dir" | "src" | "mod">("dash");
   const [busy, setBusy] = useState(false);
@@ -19,6 +19,12 @@ export function AdminConsole({ inbox, resources, sources, submissions, stats }:
     if (!res.ok) { alert("Action failed (check you are signed in as editor/admin)."); return false; }
     router.refresh(); // re-fetch server data so UI reflects DB
     return true;
+  }
+  // variant that returns the parsed JSON (used to fetch comments without forcing a refresh)
+  async function callJson(url: string, body: any) {
+    const res = await fetch(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+    if (!res.ok) return null;
+    return res.json().catch(() => null);
   }
 
   return (
@@ -39,7 +45,7 @@ export function AdminConsole({ inbox, resources, sources, submissions, stats }:
         </div>
         <div style={{ padding: "24px 26px 60px" }}>
           {tab === "dash" && <Dashboard stats={stats} inbox={inbox} />}
-          {tab === "inbox" && <Inbox inbox={inbox} call={call} />}
+          {tab === "inbox" && <Inbox inbox={inbox} published={published} call={call} callJson={callJson} />}
           {tab === "dir" && <Directory resources={resources} call={call} />}
           {tab === "src" && <Sources sources={sources} call={call} />}
           {tab === "mod" && <Moderation submissions={submissions} call={call} />}
@@ -77,42 +83,154 @@ function Stat({ k, v, c }: { k: string; v: string; c: string }) {
   return <div style={{ background: "#fff", border: "1px solid #e3e9eb", borderRadius: 8, padding: 16 }}><div style={{ fontSize: 12, color: "#6b7d85", display: "flex", alignItems: "center", gap: 6 }}><span style={{ width: 8, height: 8, borderRadius: "50%", background: c }} />{k}</div><div style={{ fontSize: 26, fontWeight: 700, marginTop: 6 }}>{v}</div></div>;
 }
 
-function Inbox({ inbox, call }: { inbox: Disc[]; call: any }) {
+function Inbox({ inbox, published, call, callJson }: { inbox: Disc[]; published: Disc[]; call: any; callJson: any }) {
   const [edit, setEdit] = useState<Disc | null>(null);
+  const [view, setView] = useState<"review" | "published">("review");
+  const list = view === "review" ? inbox : published;
   return (
     <>
-      <Table head={["Candidate", "Source", "Type", "AI", "Flag", ""]}>
-        {inbox.length === 0 ? <Empty cols={6} msg="All caught up — no items waiting for review. 🎉" /> :
-          inbox.map((d) => (
+      <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+        <button onClick={() => setView("review")} style={view === "review" ? subTabActive : subTab}>Needs Review ({inbox.length})</button>
+        <button onClick={() => setView("published")} style={view === "published" ? subTabActive : subTab}>Published ({published.length})</button>
+      </div>
+      <Table head={view === "review" ? ["Candidate", "Source", "Type", "AI", "Flag", ""] : ["Published item", "Source", "Type", "Comments", "", ""]}>
+        {list.length === 0 ? <Empty cols={6} msg={view === "review" ? "All caught up — no items waiting for review. 🎉" : "No published discoveries yet."} /> :
+          list.map((d) => (
             <tr key={d.id}>
               <Td><b>{d.title}</b></Td>
               <Td>{d.sourceName}</Td>
               <Td>{taxName(d.category)}</Td>
-              <Td><Score n={d.aiScore} /></Td>
-              <Td>{d.flag ? <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 20, background: d.flag === "risk" ? "#fbe9ed" : "#fdf2e0", color: d.flag === "risk" ? "#b0364f" : "#a8730a" }}>{d.flag}</span> : "—"}</Td>
-              <Td><button style={btnGhost} onClick={() => setEdit(d)}>Review</button></Td>
+              {view === "review"
+                ? <><Td><Score n={d.aiScore} /></Td>
+                    <Td>{d.flag ? <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 20, background: d.flag === "risk" ? "#fbe9ed" : "#fdf2e0", color: d.flag === "risk" ? "#b0364f" : "#a8730a" }}>{d.flag}</span> : "—"}</Td></>
+                : <><Td>💬 {d.commentCount ?? 0}</Td><Td>—</Td></>}
+              <Td><button style={btnGhost} onClick={() => setEdit(d)}>{view === "review" ? "Review" : "Manage"}</button></Td>
             </tr>
           ))}
       </Table>
-      {edit && <ReviewDrawer d={edit} onClose={() => setEdit(null)} call={call} />}
+      {edit && <ReviewDrawer d={edit} mode={view} onClose={() => setEdit(null)} call={call} callJson={callJson} />}
     </>
   );
 }
-function ReviewDrawer({ d, onClose, call }: { d: Disc; onClose: () => void; call: any }) {
+function ReviewDrawer({ d, mode, onClose, call, callJson }: { d: Disc; mode: "review" | "published"; onClose: () => void; call: any; callJson: any }) {
   const [title, setTitle] = useState(d.title);
   const [summary, setSummary] = useState(d.summary);
   const [why, setWhy] = useState(d.why);
-  async function approve() { await call("/api/admin/discovery", { id: d.id, action: "update", fields: { title, summary, why } }); if (await call("/api/admin/discovery", { id: d.id, action: "approve" })) onClose(); }
+  const [category, setCategory] = useState(d.category);
+  const [license, setLicense] = useState(d.license ?? "");
+  const [availability, setAvailability] = useState(d.availability ?? "");
+  const [tags, setTags] = useState<string[]>(Array.isArray(d.relatedTags) ? d.relatedTags : []);
+  const [tagInput, setTagInput] = useState("");
+  const [products, setProducts] = useState<{ name: string; seller?: string; price?: string; url?: string }[]>(Array.isArray(d.relatedProducts) ? d.relatedProducts : []);
+  const [pName, setPName] = useState(""); const [pSeller, setPSeller] = useState(""); const [pPrice, setPPrice] = useState(""); const [pUrl, setPUrl] = useState("");
+  const [comments, setComments] = useState<any[] | null>(null);
+
+  const fields = () => ({ title, summary, why, category, license, availability, relatedTags: tags, relatedProducts: products });
+
+  async function saveOnly() { if (await call("/api/admin/discovery", { id: d.id, action: "update", fields: fields() })) onClose(); }
+  async function approve() { await call("/api/admin/discovery", { id: d.id, action: "update", fields: fields() }); if (await call("/api/admin/discovery", { id: d.id, action: "approve" })) onClose(); }
   async function reject() { if (await call("/api/admin/discovery", { id: d.id, action: "reject" })) onClose(); }
+
+  function addTag() { const t = tagInput.trim(); if (t && !tags.includes(t)) setTags([...tags, t]); setTagInput(""); }
+  function addProduct() { if (!pName.trim()) return; setProducts([...products, { name: pName.trim(), seller: pSeller.trim() || undefined, price: pPrice.trim() || undefined, url: pUrl.trim() || undefined }]); setPName(""); setPSeller(""); setPPrice(""); setPUrl(""); }
+  // simple tag-based product suggestions (placeholder pool; editor confirms before adding)
+  const SUGGEST_POOL: Record<string, { name: string; seller: string; price: string }[]> = {
+    AI: [{ name: "AI Dev Kit", seller: "makerlab", price: "$45" }],
+    Routing: [{ name: "USB Logic Analyzer", seller: "dekuNukem", price: "$29" }],
+    EDA: [{ name: "JTAG Debug Probe", seller: "tinytronics", price: "$19" }],
+    LoRa: [{ name: "LoRa Module 868MHz", seller: "rfparts", price: "$12" }],
+    sensor: [{ name: "BME680 Breakout", seller: "sensorshop", price: "$9" }],
+  };
+  const suggestions = tags.flatMap((t) => SUGGEST_POOL[t] || []).filter((s) => !products.some((p) => p.name === s.name));
+
+  async function loadComments() {
+    const r = await callJson("/api/admin/discovery", { id: d.id, action: "comments" });
+    setComments(r?.comments ?? []);
+  }
+  async function delComment(cid: number) {
+    if (!confirm("Delete this comment?")) return;
+    await call("/api/admin/discovery", { id: d.id, action: "deleteComment", commentId: cid });
+    setComments((prev) => (prev ? prev.filter((c) => c.id !== cid) : prev));
+  }
+
   return (
-    <Drawer onClose={onClose} title="Review discovery">
+    <Drawer onClose={onClose} title={mode === "review" ? "Review discovery" : "Manage discovery"}>
       <Field label="Title"><input value={title} onChange={(e) => setTitle(e.target.value)} style={inp} /></Field>
-      <Field label="What it is (AI summary — editable)"><textarea value={summary} onChange={(e) => setSummary(e.target.value)} style={{ ...inp, minHeight: 70 }} /></Field>
-      <Field label="Why it matters (editable)"><textarea value={why} onChange={(e) => setWhy(e.target.value)} style={{ ...inp, minHeight: 70 }} /></Field>
-      <div style={{ fontSize: 12, color: "#6b7d85", background: "#f3faf6", border: "1px solid #bfe6cf", borderRadius: 6, padding: "8px 11px", marginBottom: 8 }}>✓ Summary originality check · ✓ no duplicate · {d.flag === "sponsored" ? "⚠ Sponsored — cannot also be an Editor's Pick" : "✓ no restricted category"}</div>
+      <Field label="Category">
+        <select value={category} onChange={(e) => setCategory(e.target.value)} style={inp}>
+          {TAXONOMY.map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
+        </select>
+      </Field>
+      <Field label="What it is (AI summary — editable)"><textarea value={summary} onChange={(e) => setSummary(e.target.value)} style={{ ...inp, minHeight: 70, resize: "vertical" }} /></Field>
+      <Field label="Why it matters for Tindie (editable)"><textarea value={why} onChange={(e) => setWhy(e.target.value)} style={{ ...inp, minHeight: 70, resize: "vertical" }} /></Field>
+      <div style={{ display: "flex", gap: 10 }}>
+        <Field label="License"><input value={license} onChange={(e) => setLicense(e.target.value)} style={inp} placeholder="e.g. Freemium / MIT" /></Field>
+        <Field label="Availability"><input value={availability} onChange={(e) => setAvailability(e.target.value)} style={inp} placeholder="e.g. Live / Preorder" /></Field>
+      </div>
+
+      <Field label="Tags (At a glance)">
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 6 }}>
+          {tags.map((t) => <span key={t} style={{ fontSize: 11.5, background: "#eef5f6", color: "#1c6e7e", padding: "3px 9px", borderRadius: 12, display: "flex", gap: 5, alignItems: "center" }}>{t}<button onClick={() => setTags(tags.filter((x) => x !== t))} style={{ border: 0, background: "none", color: "#9aabb0", cursor: "pointer", padding: 0, fontSize: 13 }}>×</button></span>)}
+        </div>
+        <div style={{ display: "flex", gap: 6 }}>
+          <input value={tagInput} onChange={(e) => setTagInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addTag(); } }} style={inp} placeholder="Add a tag, press Enter" />
+          <button style={btnGhost} onClick={addTag}>Add</button>
+        </div>
+      </Field>
+
+      <Field label="Related products on Tindie (manual)">
+        {products.length > 0 && <div style={{ marginBottom: 8 }}>
+          {products.map((p, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 10px", border: "1px solid #ececec", borderRadius: 7, marginBottom: 6 }}>
+              <div style={{ flex: 1, fontSize: 13 }}><b>{p.name}</b>{p.seller && <span style={{ color: "#8a9499" }}> · {p.seller}</span>}{p.price && <span style={{ color: "#f2762e", fontWeight: 600 }}> · {p.price}</span>}</div>
+              <button style={btnDanger} onClick={() => setProducts(products.filter((_, x) => x !== i))}>Remove</button>
+            </div>
+          ))}
+        </div>}
+        {suggestions.length > 0 && <div style={{ background: "#f6fafb", border: "1px dashed #bcdde2", borderRadius: 7, padding: "8px 10px", marginBottom: 8 }}>
+          <div style={{ fontSize: 11.5, color: "#1c6e7e", marginBottom: 5 }}>Suggested by tags (click to add):</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+            {suggestions.map((s, i) => <button key={i} style={{ ...btnGhost, fontSize: 11.5 }} onClick={() => setProducts([...products, s])}>+ {s.name} ({s.price})</button>)}
+          </div>
+        </div>}
+        <div style={{ display: "grid", gridTemplateColumns: "2fr 1.4fr 1fr", gap: 6, marginBottom: 6 }}>
+          <input value={pName} onChange={(e) => setPName(e.target.value)} style={inp} placeholder="Product name" />
+          <input value={pSeller} onChange={(e) => setPSeller(e.target.value)} style={inp} placeholder="Seller" />
+          <input value={pPrice} onChange={(e) => setPPrice(e.target.value)} style={inp} placeholder="$ price" />
+        </div>
+        <div style={{ display: "flex", gap: 6 }}>
+          <input value={pUrl} onChange={(e) => setPUrl(e.target.value)} style={inp} placeholder="Tindie product URL (optional)" />
+          <button style={btnGhost} onClick={addProduct}>Add product</button>
+        </div>
+      </Field>
+
+      {/* Comments management */}
+      <Field label="Community discussion">
+        {comments === null
+          ? <button style={btnGhost} onClick={loadComments}>Load comments ({d.commentCount ?? 0})</button>
+          : comments.length === 0
+            ? <div style={{ fontSize: 13, color: "#8a9499" }}>No comments.</div>
+            : <div>{comments.map((c) => (
+                <div key={c.id} style={{ display: "flex", gap: 8, padding: "8px 10px", border: "1px solid #ececec", borderRadius: 7, marginBottom: 6 }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, color: "#6b7d85" }}><b>{c.authorName}</b>{c.tag && <span style={{ marginLeft: 6, fontSize: 10.5, background: "#eef5f6", color: "#1c6e7e", padding: "1px 6px", borderRadius: 10 }}>{c.tag}</span>}</div>
+                    <div style={{ fontSize: 13, color: "#2f3438", marginTop: 2 }}>{c.body}</div>
+                  </div>
+                  <button style={btnDanger} onClick={() => delComment(c.id)}>Delete</button>
+                </div>
+              ))}</div>}
+      </Field>
+
+      {mode === "review" && <div style={{ fontSize: 12, color: "#6b7d85", background: "#f3faf6", border: "1px solid #bfe6cf", borderRadius: 6, padding: "8px 11px", margin: "4px 0 8px" }}>✓ Summary originality check · ✓ no duplicate · {d.flag === "sponsored" ? "⚠ Sponsored — cannot also be an Editor's Pick" : "✓ no restricted category"}</div>}
+
       <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
-        <button style={{ ...btnGhost, flex: 1, borderColor: "#d8506a", color: "#d8506a" }} onClick={reject}>Reject</button>
-        <button style={{ ...btnPrimary, flex: 1, background: "#3ea76a" }} onClick={approve}>Approve &amp; publish</button>
+        {mode === "review" ? <>
+          <button style={{ ...btnGhost, flex: 1, borderColor: "#d8506a", color: "#d8506a" }} onClick={reject}>Reject</button>
+          <button style={{ ...btnPrimary, flex: 1, background: "#3ea76a" }} onClick={approve}>Approve &amp; publish</button>
+        </> : <>
+          <button style={{ ...btnGhost, flex: 1 }} onClick={onClose}>Close</button>
+          <button style={{ ...btnPrimary, flex: 1 }} onClick={saveOnly}>Save changes</button>
+        </>}
       </div>
     </Drawer>
   );
@@ -134,7 +252,12 @@ function Directory({ resources, call }: { resources: Res[]; call: any }) {
             <Td>{taxName(r.category)}</Td>
             <Td>{r.status === "hidden" ? <span style={{ color: "#a8730a" }}>Hidden</span> : "Active"}</Td>
             <Td>{r.linkOk ? <span style={{ color: "#3ea76a" }}>● OK</span> : <span style={{ color: "#d8506a" }}>● Re-verify</span>}</Td>
-            <Td>{r.linkOk ? <button style={btnGhost} onClick={() => setEdit(r)}>Edit</button> : <button style={btnPrimary} onClick={() => setEdit(r)}>Fix link</button>}</Td>
+            <Td>
+              <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+                {r.linkOk ? <button style={btnGhost} onClick={() => setEdit(r)}>Edit</button> : <button style={btnPrimary} onClick={() => setEdit(r)}>Fix link</button>}
+                <button style={btnDanger} onClick={() => { if (confirm(`Delete resource "${r.name}"? This cannot be undone.`)) call("/api/admin/resource", { id: r.id, action: "delete" }); }}>Delete</button>
+              </div>
+            </Td>
           </tr>
         ))}
       </Table>
@@ -194,18 +317,65 @@ function ResourceDrawer({ r, onClose, call }: { r: Res | null; onClose: () => vo
 }
 
 function Sources({ sources, call }: { sources: Src[]; call: any }) {
+  const [creating, setCreating] = useState(false);
   return (
-    <Table head={["Source", "Method", "Trust", "Cap", "Status", ""]}>
-      {sources.map((s) => (
-        <tr key={s.id}>
-          <Td><b>{s.name}</b></Td><Td>{s.method}</Td>
-          <Td style={{ color: s.trust === "High" ? "#3ea76a" : s.trust === "Low" ? "#d8506a" : "#e0a020", fontWeight: 600 }}>{s.trust}</Td>
-          <Td>{s.dailyCap}/day</Td>
-          <Td>{s.status === "active" ? <span style={{ color: "#3ea76a" }}>Active</span> : <span style={{ color: "#b0364f" }}>Paused</span>}</Td>
-          <Td>{s.status === "active" ? <button style={btnGhost} onClick={() => call("/api/admin/source", { id: s.id })}>Pause</button> : <button style={btnPrimary} onClick={() => call("/api/admin/source", { id: s.id })}>Resume</button>}</Td>
-        </tr>
-      ))}
-    </Table>
+    <>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+        <span style={{ fontSize: 13, color: "#8a9499" }}>{sources.length} sources</span>
+        <button style={btnPrimary} onClick={() => setCreating(true)}>+ Add source</button>
+      </div>
+      <Table head={["Source", "Method", "Trust", "Cap", "Status", ""]}>
+        {sources.map((s) => (
+          <tr key={s.id}>
+            <Td><b>{s.name}</b></Td><Td>{s.method}</Td>
+            <Td style={{ color: s.trust === "High" ? "#3ea76a" : s.trust === "Low" ? "#d8506a" : "#e0a020", fontWeight: 600 }}>{s.trust}</Td>
+            <Td>{s.dailyCap}/day</Td>
+            <Td>{s.status === "active" ? <span style={{ color: "#3ea76a" }}>Active</span> : <span style={{ color: "#b0364f" }}>Paused</span>}</Td>
+            <Td>
+              <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+                {s.status === "active"
+                  ? <button style={btnGhost} onClick={() => call("/api/admin/source", { id: s.id, action: "toggle" })}>Pause</button>
+                  : <button style={btnPrimary} onClick={() => call("/api/admin/source", { id: s.id, action: "toggle" })}>Resume</button>}
+                <button style={btnDanger} onClick={() => { if (confirm(`Delete source "${s.name}"? This cannot be undone.`)) call("/api/admin/source", { id: s.id, action: "delete" }); }}>Delete</button>
+              </div>
+            </Td>
+          </tr>
+        ))}
+      </Table>
+      {creating && <SourceDrawer onClose={() => setCreating(false)} call={call} />}
+    </>
+  );
+}
+function SourceDrawer({ onClose, call }: { onClose: () => void; call: any }) {
+  const [name, setName] = useState("");
+  const [method, setMethod] = useState("RSS");
+  const [url, setUrl] = useState("https://");
+  const [trust, setTrust] = useState("Medium");
+  const [dailyCap, setDailyCap] = useState(2);
+  async function save() {
+    if (!name.trim()) { alert("Please enter a source name."); return; }
+    if (await call("/api/admin/source", { action: "create", fields: { name, method, url, trust, dailyCap: Number(dailyCap) } })) onClose();
+  }
+  return (
+    <Drawer onClose={onClose} title="Add source">
+      <Field label="Source name"><input value={name} onChange={(e) => setName(e.target.value)} style={inp} placeholder="e.g. Hackster.io" /></Field>
+      <Field label="Method">
+        <select value={method} onChange={(e) => setMethod(e.target.value)} style={inp}>
+          <option>RSS</option><option>API</option><option>Crawl</option>
+        </select>
+      </Field>
+      <Field label="URL (feed or API endpoint)"><input value={url} onChange={(e) => setUrl(e.target.value)} style={inp} placeholder="https://..." /></Field>
+      <Field label="Trust level">
+        <select value={trust} onChange={(e) => setTrust(e.target.value)} style={inp}>
+          <option>High</option><option>Medium</option><option>Low</option>
+        </select>
+      </Field>
+      <Field label="Daily cap (max items/day)"><input type="number" value={dailyCap} onChange={(e) => setDailyCap(Number(e.target.value))} style={inp} min={1} /></Field>
+      <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
+        <button style={{ ...btnGhost, flex: 1 }} onClick={onClose}>Cancel</button>
+        <button style={{ ...btnPrimary, flex: 1 }} onClick={save}>Create</button>
+      </div>
+    </Drawer>
   );
 }
 
@@ -248,3 +418,6 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 const inp: React.CSSProperties = { width: "100%", padding: "10px 12px", border: "1px solid #e3e9eb", borderRadius: 6, fontSize: 13.5, outline: "none", fontFamily: "inherit" };
 const btnGhost: React.CSSProperties = { background: "#fff", border: "1px solid #e3e9eb", color: "#1d5163", borderRadius: 6, padding: "6px 12px", fontWeight: 600, fontSize: 12, cursor: "pointer", fontFamily: "inherit" };
 const btnPrimary: React.CSSProperties = { background: "#22b8c4", color: "#fff", border: 0, borderRadius: 6, padding: "7px 13px", fontWeight: 600, fontSize: 12, cursor: "pointer", fontFamily: "inherit" };
+const btnDanger: React.CSSProperties = { background: "#fff", border: "1px solid #f0bfca", color: "#c2415f", borderRadius: 6, padding: "6px 12px", fontWeight: 600, fontSize: 12, cursor: "pointer", fontFamily: "inherit" };
+const subTab: React.CSSProperties = { background: "#fff", border: "1px solid #e0e6e7", color: "#4a4f54", borderRadius: 8, padding: "8px 14px", fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: "inherit" };
+const subTabActive: React.CSSProperties = { ...subTab, background: "#0f343f", color: "#fff", borderColor: "#0f343f" };

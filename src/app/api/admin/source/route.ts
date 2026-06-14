@@ -1,13 +1,24 @@
 export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { toggleSource } from "@/lib/queries";
+import { toggleSource, createSource, deleteSource } from "@/lib/queries";
 
-const schema = z.object({ id: z.number() });
+const schema = z.object({
+  id: z.number().optional(),
+  action: z.enum(["toggle", "create", "delete"]).optional(),
+  fields: z.record(z.any()).optional(),
+});
 
 export async function POST(req: Request) {
   const parsed = schema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return NextResponse.json({ error: "Invalid input" }, { status: 400 });
-  const status = await toggleSource(parsed.data.id);
-  return NextResponse.json({ ok: true, status });
+  const { id, action, fields } = parsed.data;
+  // Backwards compatible: no action + id => toggle (old Pause/Resume buttons)
+  if ((action === "toggle" || !action) && id != null) {
+    const status = await toggleSource(id);
+    return NextResponse.json({ ok: true, status });
+  }
+  if (action === "create" && fields) { await createSource(fields as any); return NextResponse.json({ ok: true }); }
+  if (action === "delete" && id != null) { await deleteSource(id); return NextResponse.json({ ok: true }); }
+  return NextResponse.json({ error: "Bad request" }, { status: 400 });
 }

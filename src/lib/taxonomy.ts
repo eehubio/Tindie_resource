@@ -1,11 +1,11 @@
 export type Tax = { id: string; name: string; ic: string; col: string };
 
 export const TAXONOMY: Tax[] = [
-  { id: "open-source",   name: "Open Source",   ic: "</>", col: "#2f9d62" },
-  { id: "components",    name: "Components",     ic: "⬡",  col: "#1c8290" },
-  { id: "tools",         name: "Design Tools",  ic: "✎",  col: "#4a6fd4" },
+  { id: "components",    name: "Sourcing",      ic: "⬡",  col: "#1c8290" },
+  { id: "tools",         name: "Designing",     ic: "✎",  col: "#4a6fd4" },
   { id: "manufacturing", name: "Manufacturing", ic: "⚙",  col: "#f2762e" },
-  { id: "crowdfunding",  name: "Marketplace",   ic: "◆",  col: "#e0556b" },
+  { id: "open-source",   name: "Sharing",       ic: "</>", col: "#2f9d62" },
+  { id: "crowdfunding",  name: "Selling",       ic: "◆",  col: "#e0556b" },
 ];
 
 export const taxName = (id: string) => TAXONOMY.find((t) => t.id === id)?.name ?? id;

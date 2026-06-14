@@ -43,6 +43,16 @@ export async function getComments(discoveryId: number) {
     .orderBy(desc(comments.createdAt));
 }
 
+export async function deleteComment(commentId: number) {
+  const rows = await db.select().from(comments).where(eq(comments.id, commentId)).limit(1);
+  const c = rows[0];
+  if (!c) return;
+  await db.delete(comments).where(eq(comments.id, commentId));
+  await db.update(discoveries)
+    .set({ commentCount: sql`GREATEST(${discoveries.commentCount} - 1, 0)` })
+    .where(eq(discoveries.id, c.discoveryId));
+}
+
 /* ---------------- public writes ---------------- */
 
 export async function addComment(discoveryId: number, body: string, tag: string | null, authorName: string, userId: string | null) {
@@ -133,6 +143,21 @@ export async function toggleSource(id: number) {
   return next;
 }
 
+export async function createSource(fields: { name: string; method?: string; url?: string; trust?: string; dailyCap?: number }) {
+  await db.insert(sources).values({
+    name: fields.name,
+    method: fields.method || "RSS",
+    url: fields.url || null,
+    trust: fields.trust || "Medium",
+    dailyCap: fields.dailyCap ?? 2,
+    status: "active",
+  });
+}
+
+export async function deleteSource(id: number) {
+  await db.delete(sources).where(eq(sources.id, id));
+}
+
 export async function verifyResource(id: number, url?: string) {
   await db.update(resources)
     .set({ linkOk: true, isVerified: true, verifiedAt: new Date(), ...(url ? { url } : {}) })
@@ -140,6 +165,10 @@ export async function verifyResource(id: number, url?: string) {
 }
 export async function updateResource(id: number, fields: Partial<typeof resources.$inferInsert>) {
   await db.update(resources).set(fields).where(eq(resources.id, id));
+}
+
+export async function deleteResource(id: number) {
+  await db.delete(resources).where(eq(resources.id, id));
 }
 
 export async function createResource(fields: {
