@@ -5,8 +5,8 @@ import { BrandLogo } from "@/components/BrandLogo";
 export function FeaturedCards() {
   const cards = [
     { tag: "Featured", name: "EEHub.io", logoText: "EEHub.io", desc: "Organize electronics projects, BOMs, schematics, and documentation in one collaborative workspace.", cta: "Explore", href: "https://eehub.io", urlLabel: "eehub.io", accent: "#22b8c4" },
-    { tag: "Featured", name: "Seeed Studio Fusion", logoText: "Seeed Fusion", desc: "PCB fabrication, assembly, and small-batch manufacturing for makers and startups.", cta: "Get Quote", href: "https://www.seeedstudio.com/prototype-pcb-assembly.html", urlLabel: "fusion.seeedstudio.com", accent: "#0aa14b" },
-    { tag: null, name: "Sell on Tindie", logoText: "Sell on Tindie", desc: "Launch your hardware products to a global community of makers, builders, and innovators.", cta: "Start Selling", href: "https://www.tindie.com/sell/", urlLabel: "tindie.com/sell", accent: "#f2762e", mascot: true },
+    { tag: "Featured", name: "Seeed Studio Fusion", logoText: "Seeed Fusion", desc: "PCB fabrication, assembly, and small-batch manufacturing for makers and startups.", cta: "Get Quote", href: "https://www.seeedstudio.com/fusion.html", urlLabel: "fusion.seeedstudio.com", accent: "#0aa14b" },
+    { tag: null, name: "Sell on Tindie", logoText: "Sell on Tindie", desc: "Launch your hardware products to a global community of makers, builders, and innovators.", cta: "Start Selling", href: "https://www.tindie.com/about/sell/", urlLabel: "tindie.com/about/sell", accent: "#f2762e", mascot: true },
   ];
   return (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 18 }}>

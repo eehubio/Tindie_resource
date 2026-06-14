@@ -3,10 +3,9 @@ import { TindieHeader, TindieFooter } from "@/components/Chrome";
 import { DiscoveryGrid } from "@/components/Discovery";
 import { SubmitButton } from "@/components/PublicWidgets";
 import { FeaturedCards, BrowseFilterCard, FeaturedThisWeek } from "@/components/HomeSections";
-import { DirectoryTabs } from "@/components/DirectoryTabs";
+import { BrowseAndDirectory } from "@/components/DirectoryTabs";
 import { getPublishedDiscoveries, getResources, getUserSaves } from "@/lib/queries";
 import { auth } from "@/lib/auth";
-import { TAXONOMY } from "@/lib/taxonomy";
 
 export const dynamic = "force-dynamic";
 
@@ -19,8 +18,6 @@ export default async function HomePage() {
     userId ? getUserSaves(userId) : Promise.resolve([] as number[]),
   ]);
   const topDiscoveries = (discoveries as any[]).slice(0, 6);
-  const catCounts: Record<string, number> = {};
-  resources.forEach((r) => { catCounts[r.category] = (catCounts[r.category] || 0) + 1; });
   const HERO_CHIPS: [string, string, string][] = [["</>", "Open Source", "open-source"], ["✎", "Design Tools", "tools"], ["🏭", "Manufacturing", "manufacturing"], ["👥", "Crowdfunding & Marketplaces", "crowdfunding"], ["⬡", "Components", "components"]];
 
   return (
@@ -62,28 +59,8 @@ export default async function HomePage() {
             <DiscoveryGrid items={topDiscoveries as any} savedIds={savedIds} signedIn={!!userId} />
           </section>
 
-          <section style={{ padding: "6px 0 28px" }}>
-            <h2 style={{ fontSize: 21, fontWeight: 600, color: "#2f3438", marginBottom: 16 }}>Browse by category</h2>
-            <div className="cat-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 13 }}>
-              {TAXONOMY.map((t) => (
-                <Link key={t.id} href={`/directory?cat=${t.id}`} style={{ background: "#fff", border: "1px solid #ececec", borderRadius: 11, padding: "18px 14px", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center", gap: 9 }}>
-                  <div style={{ width: 46, height: 46, borderRadius: 11, background: `${t.col}1a`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, color: t.col }}>{t.ic}</div>
-                  <h4 style={{ fontSize: 13, fontWeight: 600, color: "#2f3438", lineHeight: 1.25 }}>{t.name}</h4>
-                  <p style={{ fontSize: 11.5, color: "#8a9499" }}>{catCounts[t.id] || 0} resources</p>
-                </Link>
-              ))}
-            </div>
-          </section>
-
-          <section style={{ padding: "6px 0 32px" }}>
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
-              <h2 style={{ fontSize: 21, fontWeight: 600, color: "#2f3438" }}>Curated Resource Directory</h2>
-              <Link href="/directory" style={{ fontSize: 13.5, fontWeight: 600, color: "#1aa0ab" }}>View all resources →</Link>
-            </div>
-            <p style={{ color: "#8a9499", fontSize: 14, marginBottom: 18 }}>{resources.length}+ trusted platforms, tools, communities, and services for hardware creators.</p>
-            <DirectoryTabs resources={resources} perTab={6} />
-            <div style={{ textAlign: "center", marginTop: 20 }}><Link href="/directory" style={{ fontSize: 13.5, fontWeight: 600, color: "#1aa0ab" }}>See all {resources.length}+ resources →</Link></div>
-          </section>
+          <BrowseAndDirectory resources={resources} perTab={6} />
+          <div style={{ textAlign: "center", marginTop: 4, marginBottom: 28 }}><Link href="/directory" style={{ fontSize: 13.5, fontWeight: 600, color: "#1aa0ab" }}>See all {resources.length}+ resources →</Link></div>
         </main>
 
         <aside style={{ paddingTop: 26 }}>

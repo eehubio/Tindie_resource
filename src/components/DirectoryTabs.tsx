@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { BrandLogo } from "@/components/BrandLogo";
 import { TAXONOMY } from "@/lib/taxonomy";
 
@@ -29,35 +29,76 @@ function Card({ r }: { r: any }) {
   );
 }
 
-export function DirectoryTabs({ resources, perTab = 6 }: { resources: any[]; perTab?: number }) {
+// Browse-by-category icon cards + directory tabs + filtered grid, all sharing one selected category.
+export function BrowseAndDirectory({ resources, perTab = 6 }: { resources: any[]; perTab?: number }) {
   const [cat, setCat] = useState<string>("all");
-  const tabs = [{ id: "all", name: "All" }, ...TAXONOMY.map((t) => ({ id: t.id, name: t.name }))];
+  const dirRef = useRef<HTMLDivElement>(null);
+  const counts: Record<string, number> = {};
+  resources.forEach((r) => { counts[r.category] = (counts[r.category] || 0) + 1; });
+
   const filtered = cat === "all" ? resources : resources.filter((r) => r.category === cat);
   const shown = filtered.slice(0, perTab);
+  const tabs = [{ id: "all", name: "All" }, ...TAXONOMY.map((t) => ({ id: t.id, name: t.name }))];
+
+  function pick(id: string) {
+    setCat(id);
+    // scroll the directory into view so the result is visible after clicking a category card
+    setTimeout(() => dirRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 40);
+  }
 
   return (
-    <div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 18 }}>
-        {tabs.map((t) => {
-          const active = cat === t.id;
-          const count = t.id === "all" ? resources.length : resources.filter((r) => r.category === t.id).length;
-          return (
-            <button key={t.id} onClick={() => setCat(t.id)}
-              style={{
-                fontSize: 12.5, fontWeight: 600, padding: "7px 13px", borderRadius: 8, cursor: "pointer",
-                border: active ? "1px solid #1c6e7e" : "1px solid #e0e6e7",
-                background: active ? "#1c6e7e" : "#fff",
-                color: active ? "#fff" : "#4a4f54", fontFamily: "inherit",
-              }}>
-              {t.name} <span style={{ opacity: 0.7, fontWeight: 400 }}>{count}</span>
-            </button>
-          );
-        })}
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(300px,1fr))", gap: 15 }}>
-        {shown.map((r) => <Card key={r.id} r={r} />)}
-      </div>
-      {filtered.length === 0 && <p style={{ color: "#8a9499", fontSize: 14, textAlign: "center", padding: "30px 0" }}>No resources in this category yet.</p>}
-    </div>
+    <>
+      {/* Browse by category — clickable icon cards */}
+      <section style={{ padding: "6px 0 28px" }}>
+        <h2 style={{ fontSize: 21, fontWeight: 600, color: "#2f3438", marginBottom: 16 }}>Browse by category</h2>
+        <div className="cat-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 13 }}>
+          {TAXONOMY.map((t) => {
+            const active = cat === t.id;
+            return (
+              <button key={t.id} onClick={() => pick(t.id)}
+                style={{
+                  background: active ? `${t.col}10` : "#fff",
+                  border: active ? `1.5px solid ${t.col}` : "1px solid #ececec",
+                  borderRadius: 11, padding: "18px 14px", textAlign: "center",
+                  display: "flex", flexDirection: "column", alignItems: "center", gap: 9,
+                  cursor: "pointer", fontFamily: "inherit",
+                }}>
+                <div style={{ width: 46, height: 46, borderRadius: 11, background: `${t.col}1a`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, color: t.col }}>{t.ic}</div>
+                <h4 style={{ fontSize: 13, fontWeight: 600, color: "#2f3438", lineHeight: 1.25 }}>{t.name}</h4>
+                <p style={{ fontSize: 11.5, color: "#8a9499" }}>{counts[t.id] || 0} resources</p>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Curated directory — tabs synced with the category cards */}
+      <section ref={dirRef} style={{ padding: "6px 0 32px", scrollMarginTop: 80 }}>
+        <h2 style={{ fontSize: 21, fontWeight: 600, color: "#2f3438", marginBottom: 4 }}>Curated Resource Directory</h2>
+        <p style={{ color: "#8a9499", fontSize: 14, marginBottom: 18 }}>{resources.length}+ trusted platforms, tools, communities, and services for hardware creators.</p>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 18 }}>
+          {tabs.map((t) => {
+            const active = cat === t.id;
+            const count = t.id === "all" ? resources.length : counts[t.id] || 0;
+            return (
+              <button key={t.id} onClick={() => setCat(t.id)}
+                style={{
+                  fontSize: 12.5, fontWeight: 600, padding: "7px 13px", borderRadius: 8, cursor: "pointer",
+                  border: active ? "1px solid #1c6e7e" : "1px solid #e0e6e7",
+                  background: active ? "#1c6e7e" : "#fff",
+                  color: active ? "#fff" : "#4a4f54", fontFamily: "inherit",
+                }}>
+                {t.name} <span style={{ opacity: 0.7, fontWeight: 400 }}>{count}</span>
+              </button>
+            );
+          })}
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(300px,1fr))", gap: 15 }}>
+          {shown.map((r) => <Card key={r.id} r={r} />)}
+        </div>
+        {filtered.length === 0 && <p style={{ color: "#8a9499", fontSize: 14, textAlign: "center", padding: "30px 0" }}>No resources in this category yet.</p>}
+        {filtered.length > perTab && <div style={{ textAlign: "center", marginTop: 20, fontSize: 13, color: "#8a9499" }}>Showing {perTab} of {filtered.length} — click a tab or use the directory page to see all.</div>}
+      </section>
+    </>
   );
 }
