@@ -18,7 +18,7 @@ export default async function HomePage() {
     userId ? getUserSaves(userId) : Promise.resolve([] as number[]),
   ]);
   const topDiscoveries = (discoveries as any[]).slice(0, 6);
-  const HERO_CHIPS: [string, string, string][] = [["</>", "Open Source", "open-source"], ["✎", "Design Tools", "tools"], ["🏭", "Manufacturing", "manufacturing"], ["👥", "Crowdfunding & Marketplaces", "crowdfunding"], ["⬡", "Components", "components"]];
+  const HERO_CHIPS: [string, string, string][] = [["</>", "Open Source", "open-source"], ["✎", "Design Tools", "tools"], ["🏭", "Manufacturing", "manufacturing"], ["👥", "Marketplace", "crowdfunding"], ["⬡", "Components", "components"]];
 
   return (
     <>

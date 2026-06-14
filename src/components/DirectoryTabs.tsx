@@ -38,7 +38,6 @@ export function BrowseAndDirectory({ resources, perTab = 6 }: { resources: any[]
 
   const filtered = cat === "all" ? resources : resources.filter((r) => r.category === cat);
   const shown = filtered.slice(0, perTab);
-  const tabs = [{ id: "all", name: "All" }, ...TAXONOMY.map((t) => ({ id: t.id, name: t.name }))];
 
   function pick(id: string) {
     setCat(id);
@@ -72,32 +71,20 @@ export function BrowseAndDirectory({ resources, perTab = 6 }: { resources: any[]
         </div>
       </section>
 
-      {/* Curated directory — tabs synced with the category cards */}
+      {/* Curated directory — filtered by the category cards above */}
       <section ref={dirRef} style={{ padding: "6px 0 32px", scrollMarginTop: 80 }}>
-        <h2 style={{ fontSize: 21, fontWeight: 600, color: "#2f3438", marginBottom: 4 }}>Curated Resource Directory</h2>
-        <p style={{ color: "#8a9499", fontSize: 14, marginBottom: 18 }}>{resources.length}+ trusted platforms, tools, communities, and services for hardware creators.</p>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 18 }}>
-          {tabs.map((t) => {
-            const active = cat === t.id;
-            const count = t.id === "all" ? resources.length : counts[t.id] || 0;
-            return (
-              <button key={t.id} onClick={() => setCat(t.id)}
-                style={{
-                  fontSize: 12.5, fontWeight: 600, padding: "7px 13px", borderRadius: 8, cursor: "pointer",
-                  border: active ? "1px solid #1c6e7e" : "1px solid #e0e6e7",
-                  background: active ? "#1c6e7e" : "#fff",
-                  color: active ? "#fff" : "#4a4f54", fontFamily: "inherit",
-                }}>
-                {t.name} <span style={{ opacity: 0.7, fontWeight: 400 }}>{count}</span>
-              </button>
-            );
-          })}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4, gap: 12, flexWrap: "wrap" }}>
+          <h2 style={{ fontSize: 21, fontWeight: 600, color: "#2f3438" }}>Curated Resource Directory</h2>
+          {cat !== "all" && <button onClick={() => setCat("all")} style={{ fontSize: 12.5, fontWeight: 600, color: "#1aa0ab", background: "none", border: 0, cursor: "pointer", fontFamily: "inherit" }}>← Show all categories</button>}
         </div>
+        <p style={{ color: "#8a9499", fontSize: 14, marginBottom: 18 }}>
+          {cat === "all" ? `${resources.length}+ trusted platforms, tools, communities, and services for hardware creators.` : `${filtered.length} in ${TAXONOMY.find((t) => t.id === cat)?.name ?? cat}.`}
+        </p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(300px,1fr))", gap: 15 }}>
           {shown.map((r) => <Card key={r.id} r={r} />)}
         </div>
         {filtered.length === 0 && <p style={{ color: "#8a9499", fontSize: 14, textAlign: "center", padding: "30px 0" }}>No resources in this category yet.</p>}
-        {filtered.length > perTab && <div style={{ textAlign: "center", marginTop: 20, fontSize: 13, color: "#8a9499" }}>Showing {perTab} of {filtered.length} — click a tab or use the directory page to see all.</div>}
+        {filtered.length > perTab && <div style={{ textAlign: "center", marginTop: 20, fontSize: 13, color: "#8a9499" }}>Showing {perTab} of {filtered.length} — see the full directory page for all.</div>}
       </section>
     </>
   );
