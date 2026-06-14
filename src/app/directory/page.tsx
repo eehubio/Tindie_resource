@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { TindieHeader, TindieFooter } from "@/components/Chrome";
 import { SubmitButton } from "@/components/PublicWidgets";
+import { BrandLogo } from "@/components/BrandLogo";
 import { getResources } from "@/lib/queries";
-import { TAXONOMY, srcColor, ini } from "@/lib/taxonomy";
+import { TAXONOMY } from "@/lib/taxonomy";
 
 export const dynamic = "force-dynamic";
 
@@ -66,7 +67,7 @@ function Grid({ items }: { items: any[] }) {
         return (
           <div key={r.id} style={{ background: "#fff", border: "1px solid #ececec", borderRadius: 11, padding: 15, display: "flex", flexDirection: "column", gap: 9 }}>
             <div style={{ display: "flex", gap: 11, alignItems: "flex-start" }}>
-              <span style={{ width: 40, height: 40, borderRadius: 9, flex: "none", display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700, fontSize: 13, background: srcColor(r.name) }}>{ini(r.name)}</span>
+              <BrandLogo name={r.name} src={r.logo} size={40} />
               <div style={{ flex: 1 }}>
                 <h4 style={{ fontSize: 14, color: "#2f3438", display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>{r.name}
                   {labels.map(([t, bg, fg]) => <span key={t} style={{ fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 5, background: bg, color: fg }}>{t}</span>)}
