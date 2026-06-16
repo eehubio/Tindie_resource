@@ -1,11 +1,12 @@
 "use client";
 import { useState } from "react";
-import { taxName, srcColor, RELATED_PRODUCTS } from "@/lib/taxonomy";
+import { taxName, RELATED_PRODUCTS } from "@/lib/taxonomy";
 
 export type Discovery = {
   id: number; title: string; summary: string; why: string; category: string;
   sourceName: string; icon: string | null; chips: string[]; license: string | null;
   availability: string | null; relatedTags: string[]; isSponsored: boolean | null;
+  relatedProducts?: { name: string; seller?: string; price?: string; url?: string }[] | null;
   isPick: boolean | null; saveCount: number | null; commentCount: number | null;
 };
 
@@ -45,17 +46,17 @@ function DiscoveryCard({ d, saved, signedIn, onOpen }: { d: Discovery; saved: bo
     if (res.ok) { const j = await res.json(); setSaved(j.saved); setSaves((n) => n + (j.saved ? 1 : -1)); }
   }
   return (
-    <div onClick={onOpen} style={{ background: "#fff", border: "1px solid #ececec", borderRadius: 10, overflow: "hidden", display: "flex", flexDirection: "column", cursor: "pointer" }}>
-      <div style={{ aspectRatio: "16/9", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 44, position: "relative", background: `linear-gradient(135deg, ${srcColor(d.sourceName)}18, ${srcColor(d.sourceName)}33)` }}>
-        {d.isSponsored ? <span style={corner("#fbf2dc", "#9a6b08")}>Sponsored</span> : d.isPick ? <span style={corner("#f2762e", "#fff")}>Tindie Pick</span> : null}
-        {d.icon || "🔧"}
-      </div>
-      <div style={{ padding: "14px 16px", display: "flex", flexDirection: "column", flex: 1 }}>
-        <div style={{ fontSize: 10.5, fontWeight: 600, letterSpacing: ".5px", textTransform: "uppercase", color: "#22b8c4", marginBottom: 5 }}>{taxName(d.category)}</div>
-        <h4 style={{ fontSize: 15, margin: "0 0 5px", color: "#2f3438" }}>{d.title}</h4>
-        <div style={{ fontSize: 13, color: "#8a9499", flex: 1 }}>{d.summary}</div>
+    <div onClick={onOpen} style={{ background: "#fff", border: "1px solid #ececec", borderRadius: 10, display: "flex", flexDirection: "column", cursor: "pointer" }}>
+      <div style={{ padding: "15px 16px", display: "flex", flexDirection: "column", flex: 1 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 7 }}>
+          <span style={{ fontSize: 10.5, fontWeight: 600, letterSpacing: ".5px", textTransform: "uppercase", color: "#22b8c4" }}>{taxName(d.category)}</span>
+          {d.isSponsored ? <span style={{ fontSize: 10, fontWeight: 600, background: "#fbf2dc", color: "#9a6b08", padding: "2px 7px", borderRadius: 4 }}>Sponsored</span>
+            : d.isPick ? <span style={{ fontSize: 10, fontWeight: 600, background: "#fdebdf", color: "#c25a14", padding: "2px 7px", borderRadius: 4 }}>★ Tindie Pick</span> : null}
+        </div>
+        <h4 style={{ fontSize: 15.5, margin: "0 0 6px", color: "#2f3438", lineHeight: 1.3 }}>{d.title}</h4>
+        <div style={{ fontSize: 11.5, color: "#8a9499", marginBottom: 9 }}><b style={{ color: "#5a6b72" }}>{d.sourceName}</b> · <span style={{ background: "#eef7f8", color: "#22b8c4", padding: "1px 6px", borderRadius: 4, fontSize: 10 }}>Human-reviewed ✓</span></div>
+        <div style={{ fontSize: 13, color: "#6b7479", flex: 1, lineHeight: 1.5 }}>{d.summary}</div>
         <div style={{ fontSize: 12, color: "#1c6e7e", background: "#eef7f8", borderRadius: 7, padding: "8px 10px", marginTop: 11 }}><b>Why it matters:</b> {d.why}</div>
-        <div style={{ fontSize: 11.5, color: "#8a9499", marginTop: 11 }}>{d.sourceName} · today</div>
         <div onClick={(e) => e.stopPropagation()} style={{ display: "flex", gap: 2, marginTop: 11, borderTop: "1px solid #ececec", paddingTop: 8 }}>
           <button onClick={toggleSave} style={act(isSaved)}>♡ <span>{saves}</span> Save</button>
           <button onClick={onOpen} style={act(false)}>💬 <span>{d.commentCount || 0}</span></button>
@@ -71,7 +72,18 @@ function DetailDrawer({ d, saved, signedIn, onClose }: { d: Discovery; saved: bo
   const [body, setBody] = useState("");
   const [tag, setTag] = useState("");
   const [loaded, setLoaded] = useState(false);
-  const rel = (d.relatedTags || []).flatMap((k) => RELATED_PRODUCTS[k] || []);
+  // Prefer products the editor manually added in the admin Review drawer (stored in DB).
+  // Fall back to tag-based suggestions only if none were set.
+  // relatedProducts may arrive as an array (normal) or, depending on driver, a JSON string. Handle both.
+  const rawProducts: any = (d as any).relatedProducts;
+  const productList: { name: string; seller?: string; price?: string; url?: string }[] =
+    Array.isArray(rawProducts) ? rawProducts
+    : (typeof rawProducts === "string" && rawProducts.trim().startsWith("["))
+      ? (() => { try { return JSON.parse(rawProducts); } catch { return []; } })()
+      : [];
+  const manual = productList.map((p) => ({ t: p.name, s: p.seller || "", p: p.price || "", ic: "🛒", url: p.url || "" }));
+  const fallback = (d.relatedTags || []).flatMap((k) => RELATED_PRODUCTS[k] || []).map((r: any) => ({ ...r, url: "" }));
+  const rel = manual.length > 0 ? manual : fallback;
   if (!loaded) { setLoaded(true); fetch(`/api/discoveries/${d.id}/comments`).then((r) => r.ok ? r.json() : []).then((j) => setComments(j || [])).catch(() => {}); }
 
   async function post() {
@@ -90,7 +102,6 @@ function DetailDrawer({ d, saved, signedIn, onClose }: { d: Discovery; saved: bo
           <button onClick={onClose} style={{ background: "none", border: 0, fontSize: 24, color: "#8a9499", cursor: "pointer" }}>×</button>
         </div>
         <div style={{ padding: 20 }}>
-          <div style={{ aspectRatio: "16/9", borderRadius: 10, background: `linear-gradient(135deg, ${srcColor(d.sourceName)}18, ${srcColor(d.sourceName)}3a)`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 64, marginBottom: 16 }}>{d.icon || "🔧"}</div>
           <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".5px", color: "#22b8c4", fontWeight: 600 }}>{taxName(d.category)}{d.isSponsored ? " · Sponsored" : d.isPick ? " · Tindie Pick" : ""}</div>
           <div style={{ fontSize: 22, fontWeight: 600, color: "#2f3438", margin: "6px 0 4px" }}>{d.title}</div>
           <div style={{ fontSize: 12.5, color: "#8a9499", marginBottom: 16 }}><b>{d.sourceName}</b> · curated · <span style={{ background: "#eef7f8", color: "#22b8c4", padding: "1px 6px", borderRadius: 4, fontSize: 10 }}>Human-reviewed ✓</span></div>
@@ -102,12 +113,18 @@ function DetailDrawer({ d, saved, signedIn, onClose }: { d: Discovery; saved: bo
             <div style={{ border: "1px solid #ececec", borderRadius: 10, padding: 14, background: "#fafcfc", marginBottom: 20 }}>
               <h3 style={h3()}>Related products on Tindie</h3>
               <div style={{ fontSize: 11.5, color: "#8a9499", marginBottom: 10 }}>Turn this discovery into a sale — modules and tools makers already sell.</div>
-              {rel.map((r) => (
-                <div key={r.t} style={{ display: "flex", gap: 11, padding: "9px 0", borderTop: "1px solid #ececec" }}>
-                  <div style={{ width: 46, height: 46, borderRadius: 8, background: "#eef2f3", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>{r.ic}</div>
-                  <div style={{ flex: 1 }}><div style={{ fontSize: 13, fontWeight: 600, color: "#2f3438" }}>{r.t}</div><div style={{ fontSize: 11.5, color: "#8a9499" }}>{r.s} · <span style={{ fontWeight: 700, color: "#f2762e" }}>{r.p}</span></div></div>
-                </div>
-              ))}
+              {rel.map((r) => {
+                const inner = (
+                  <>
+                    <div style={{ width: 46, height: 46, borderRadius: 8, background: "#eef2f3", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>{r.ic}</div>
+                    <div style={{ flex: 1 }}><div style={{ fontSize: 13, fontWeight: 600, color: "#2f3438" }}>{r.t}</div><div style={{ fontSize: 11.5, color: "#8a9499" }}>{r.s}{r.p ? <> · <span style={{ fontWeight: 700, color: "#f2762e" }}>{r.p}</span></> : null}</div></div>
+                    {r.url ? <span style={{ fontSize: 11, color: "#22b8c4", alignSelf: "center" }}>Visit ↗</span> : null}
+                  </>
+                );
+                return r.url
+                  ? <a key={r.t} href={r.url} target="_blank" rel="noreferrer" style={{ display: "flex", gap: 11, padding: "9px 0", borderTop: "1px solid #ececec", textDecoration: "none" }}>{inner}</a>
+                  : <div key={r.t} style={{ display: "flex", gap: 11, padding: "9px 0", borderTop: "1px solid #ececec" }}>{inner}</div>;
+              })}
             </div>
           )}
           <Block h="Community discussion">
@@ -135,4 +152,3 @@ function Block({ h, children }: { h: string; children: React.ReactNode }) {
 const h3 = () => ({ fontSize: 13, textTransform: "uppercase" as const, letterSpacing: ".4px", color: "#1c6e7e", marginBottom: 6 });
 const pill = (active: boolean) => ({ fontSize: 13, padding: "8px 14px", borderRadius: 8, border: "1px solid #ececec", background: active ? "#1c6e7e" : "#fff", color: active ? "#fff" : "#8a9499", cursor: "pointer", fontFamily: "inherit" });
 const act = (on: boolean) => ({ display: "flex", alignItems: "center", gap: 5, fontSize: 12.5, color: on ? "#f2762e" : "#8a9499", background: "none", border: 0, cursor: "pointer", padding: "6px 9px", borderRadius: 6, fontFamily: "inherit" });
-const corner = (bg: string, fg: string) => ({ position: "absolute" as const, top: 9, right: 9, fontSize: 9, fontWeight: 700, letterSpacing: ".4px", textTransform: "uppercase" as const, padding: "3px 8px", borderRadius: 4, background: bg, color: fg });

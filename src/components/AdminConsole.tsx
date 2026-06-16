@@ -242,25 +242,43 @@ function Directory({ resources, call }: { resources: Res[]; call: any }) {
   return (
     <>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
-        <span style={{ fontSize: 13, color: "#8a9499" }}>{resources.length} resources</span>
+        <span style={{ fontSize: 13, color: "#8a9499" }}>{resources.length} resources · grouped by category · use ▲▼ to set the order shown on the site</span>
         <button style={btnPrimary} onClick={() => setCreating(true)}>+ Add resource</button>
       </div>
-      <Table head={["Resource", "Category", "Status", "Link", ""]}>
-        {resources.map((r) => (
-          <tr key={r.id}>
-            <Td><b>{r.name}</b></Td>
-            <Td>{taxName(r.category)}</Td>
-            <Td>{r.status === "hidden" ? <span style={{ color: "#a8730a" }}>Hidden</span> : "Active"}</Td>
-            <Td>{r.linkOk ? <span style={{ color: "#3ea76a" }}>● OK</span> : <span style={{ color: "#d8506a" }}>● Re-verify</span>}</Td>
-            <Td>
-              <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
-                {r.linkOk ? <button style={btnGhost} onClick={() => setEdit(r)}>Edit</button> : <button style={btnPrimary} onClick={() => setEdit(r)}>Fix link</button>}
-                <button style={btnDanger} onClick={() => { if (confirm(`Delete resource "${r.name}"? This cannot be undone.`)) call("/api/admin/resource", { id: r.id, action: "delete" }); }}>Delete</button>
-              </div>
-            </Td>
-          </tr>
-        ))}
-      </Table>
+      {TAXONOMY.map((t: any) => {
+        const group = resources.filter((r) => r.category === t.id);
+        if (group.length === 0) return null;
+        return (
+          <div key={t.id} style={{ marginBottom: 26 }}>
+            <h3 style={{ fontSize: 15, fontWeight: 600, color: "#2f3438", margin: "0 0 8px", display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ width: 22, height: 22, borderRadius: 6, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: "#fff", background: t.col }}>{t.ic}</span>
+              {t.name} <span style={{ fontSize: 12, fontWeight: 400, color: "#8a9499" }}>({group.length})</span>
+            </h3>
+            <Table head={["#", "Resource", "Status", "Link", "Order", ""]}>
+              {group.map((r, i) => (
+                <tr key={r.id}>
+                  <Td>{i + 1}</Td>
+                  <Td><b>{r.name}</b></Td>
+                  <Td>{r.status === "hidden" ? <span style={{ color: "#a8730a" }}>Hidden</span> : "Active"}</Td>
+                  <Td>{r.linkOk ? <span style={{ color: "#3ea76a" }}>● OK</span> : <span style={{ color: "#d8506a" }}>● Re-verify</span>}</Td>
+                  <Td>
+                    <div style={{ display: "flex", gap: 4 }}>
+                      <button style={{ ...btnGhost, padding: "5px 9px", opacity: i === 0 ? 0.35 : 1 }} disabled={i === 0} onClick={() => call("/api/admin/resource", { id: r.id, action: "move", dir: "up" })}>▲</button>
+                      <button style={{ ...btnGhost, padding: "5px 9px", opacity: i === group.length - 1 ? 0.35 : 1 }} disabled={i === group.length - 1} onClick={() => call("/api/admin/resource", { id: r.id, action: "move", dir: "down" })}>▼</button>
+                    </div>
+                  </Td>
+                  <Td>
+                    <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+                      {r.linkOk ? <button style={btnGhost} onClick={() => setEdit(r)}>Edit</button> : <button style={btnPrimary} onClick={() => setEdit(r)}>Fix link</button>}
+                      <button style={btnDanger} onClick={() => { if (confirm(`Delete resource "${r.name}"? This cannot be undone.`)) call("/api/admin/resource", { id: r.id, action: "delete" }); }}>Delete</button>
+                    </div>
+                  </Td>
+                </tr>
+              ))}
+            </Table>
+          </div>
+        );
+      })}
       {edit && <ResourceDrawer r={edit} onClose={() => setEdit(null)} call={call} />}
       {creating && <ResourceDrawer r={null} onClose={() => setCreating(false)} call={call} />}
     </>

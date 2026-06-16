@@ -61,6 +61,7 @@ export const resources = pgTable("resources", {
   isSponsored: boolean("is_sponsored").default(false),
   isVerified: boolean("is_verified").default(false),
   linkOk: boolean("link_ok").default(true),
+  sortOrder: integer("sort_order").default(0),
   clicks: integer("clicks").default(0),
   verifiedAt: timestamp("verified_at"),
   status: varchar("status", { length: 20 }).notNull().default("active"), // active | hidden

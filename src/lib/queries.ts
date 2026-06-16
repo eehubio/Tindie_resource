@@ -34,7 +34,7 @@ export async function getDiscovery(id: number) {
 export async function getResources() {
   return db.select().from(resources)
     .where(eq(resources.status, "active"))
-    .orderBy(desc(resources.isPick), resources.name);
+    .orderBy(resources.category, resources.sortOrder, resources.name);
 }
 
 export async function getComments(discoveryId: number) {
@@ -96,7 +96,27 @@ export async function getInbox(status = "needs_review") {
 }
 
 export async function getAllResourcesAdmin() {
-  return db.select().from(resources).orderBy(resources.name);
+  return db.select().from(resources).orderBy(resources.category, resources.sortOrder, resources.name);
+}
+
+// Move a resource up/down within its category by swapping sort_order with its neighbour.
+export async function moveResource(id: number, dir: "up" | "down") {
+  const rows = await db.select().from(resources).where(eq(resources.id, id)).limit(1);
+  const cur = rows[0];
+  if (!cur) return;
+  // siblings in the same category, ordered as displayed
+  const siblings = await db.select().from(resources)
+    .where(eq(resources.category, cur.category))
+    .orderBy(resources.sortOrder, resources.name);
+  const idx = siblings.findIndex((s) => s.id === id);
+  const swapIdx = dir === "up" ? idx - 1 : idx + 1;
+  if (swapIdx < 0 || swapIdx >= siblings.length) return; // already at the edge
+  // normalise: assign sequential sort_order to all siblings, then swap the two
+  const order = siblings.map((s) => s.id);
+  [order[idx], order[swapIdx]] = [order[swapIdx], order[idx]];
+  for (let i = 0; i < order.length; i++) {
+    await db.update(resources).set({ sortOrder: i }).where(eq(resources.id, order[i]));
+  }
 }
 
 export async function getSources() {
