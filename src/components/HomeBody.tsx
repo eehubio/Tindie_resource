@@ -53,7 +53,7 @@ export function HomeBody({ resources, topDiscoveries, savedIds, signedIn, chrome
         </main>
 
         <aside style={{ paddingTop: 26 }}>
-          <FeaturedThisWeek />
+          <FeaturedThisWeek items={(resources || []).filter((r: any) => r.isFeatured).slice(0, 6).map((r: any) => ({ id: r.id, name: r.name, tag: r.capLabel, category: r.category, url: r.url, logo: r.logo }))} />
           <SubmitButton />
           <div style={{ fontSize: 11, color: "#8a9499", lineHeight: 1.5, padding: "12px 14px", background: "#f2f5f5", borderRadius: 8, marginTop: 16 }}>
             Editor&apos;s Picks and rankings are chosen by our team and are never paid placements. Tindie may earn a referral fee from some partner links; this does not affect rankings.

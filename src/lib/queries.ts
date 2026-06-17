@@ -1,7 +1,7 @@
 import { and, desc, eq, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
-  resources, discoveries, sources, submissions, comments, saves, subscribers,
+  resources, discoveries, sources, submissions, comments, saves, subscribers, featured,
 } from "@/db/schema";
 
 /* ---------------- public reads ---------------- */
@@ -193,7 +193,7 @@ export async function deleteResource(id: number) {
 
 export async function createResource(fields: {
   name: string; url: string; category: string; description?: string;
-  capLabel?: string; logo?: string; isPick?: boolean; isPartner?: boolean;
+  capLabel?: string; logo?: string; isPick?: boolean; isPartner?: boolean; isFeatured?: boolean;
 }) {
   const base = fields.name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 80) || "resource";
   const slug = base + "-" + Date.now().toString(36);
@@ -207,6 +207,7 @@ export async function createResource(fields: {
     logo: fields.logo || null,
     isPick: !!fields.isPick,
     isPartner: !!fields.isPartner,
+    isFeatured: !!fields.isFeatured,
     isVerified: false,
     linkOk: true,
     status: "active",
@@ -228,4 +229,33 @@ export async function moderateSubmission(id: number, action: "approve" | "reject
     slug, name: s.name, url: s.url || "https://", description: s.why || "Submitted by the community.",
     category: s.category || "open-source", capLabel: "Community", isVerified: false, status: "hidden",
   }).onConflictDoNothing();
+}
+
+/* ---------------- featured (this week) ---------------- */
+export async function getFeatured() {
+  return db.select().from(featured).orderBy(featured.sortOrder, featured.id);
+}
+export async function createFeatured(fields: { name: string; tag?: string; category?: string; url?: string; logo?: string }) {
+  await db.insert(featured).values({
+    name: fields.name,
+    tag: fields.tag || null,
+    category: fields.category || null,
+    url: fields.url || null,
+    logo: fields.logo || null,
+  });
+}
+export async function deleteFeatured(id: number) {
+  await db.delete(featured).where(eq(featured.id, id));
+}
+export async function moveFeatured(id: number, dir: "up" | "down") {
+  const rows = await db.select().from(featured).orderBy(featured.sortOrder, featured.id);
+  const idx = rows.findIndex((r) => r.id === id);
+  if (idx < 0) return;
+  const swap = dir === "up" ? idx - 1 : idx + 1;
+  if (swap < 0 || swap >= rows.length) return;
+  const order = rows.map((r) => r.id);
+  [order[idx], order[swap]] = [order[swap], order[idx]];
+  for (let i = 0; i < order.length; i++) {
+    await db.update(featured).set({ sortOrder: i }).where(eq(featured.id, order[i]));
+  }
 }

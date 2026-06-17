@@ -294,9 +294,10 @@ function ResourceDrawer({ r, onClose, call }: { r: Res | null; onClose: () => vo
   const [logo, setLogo] = useState(r?.logo ?? "");
   const [isPick, setIsPick] = useState(!!r?.isPick);
   const [isPartner, setIsPartner] = useState(!!r?.isPartner);
+  const [isFeatured, setIsFeatured] = useState(!!r?.isFeatured);
 
   async function save() {
-    const fields = { name, url, category, description, capLabel, logo: logo || null, isPick, isPartner };
+    const fields = { name, url, category, description, capLabel, logo: logo || null, isPick, isPartner, isFeatured };
     const ok = isNew
       ? await call("/api/admin/resource", { action: "create", fields })
       : await call("/api/admin/resource", { id: r!.id, action: "update", fields });
@@ -323,6 +324,9 @@ function ResourceDrawer({ r, onClose, call }: { r: Res | null; onClose: () => vo
         </label>
         <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#4a4f54", cursor: "pointer" }}>
           <input type="checkbox" checked={isPartner} onChange={(e) => setIsPartner(e.target.checked)} /> Partner
+        </label>
+        <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, color: "#4a4f54", cursor: "pointer" }}>
+          <input type="checkbox" checked={isFeatured} onChange={(e) => setIsFeatured(e.target.checked)} /> Featured this week
         </label>
       </div>
       <div style={{ display: "flex", gap: 10, marginTop: 16 }}>

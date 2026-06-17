@@ -50,28 +50,34 @@ export function BrowseFilterCard() {
   );
 }
 
-/* ---- "Featured this week" sidebar list ---- */
-export function FeaturedThisWeek() {
-  const items = [
-    { name: "Seeed Studio XIAO ESP32C6", tag: "New Board", tagBg: "#e4f3f5", tagFg: "#1c8290" },
-    { name: "PCBWay 5-Layer PCB Promo", tag: "Manufacturing", tagBg: "#fff0e0", tagFg: "#c25a14" },
-    { name: "KiCad 8.0 Released", tag: "Design Tools", tagBg: "#eef0ff", tagFg: "#4a6fd4" },
-    { name: "Hackaday Prize 2024 Submissions Open", tag: "Open Source", tagBg: "#e7f5ee", tagFg: "#268a52" },
-    { name: "ReekyU Quadruped Robot", tag: "Crowdfunding", tagBg: "#fbe9ef", tagFg: "#c2415f" },
-  ];
+/* ---- "Featured this week" sidebar list (data-driven, managed in admin) ---- */
+const TAG_COLORS: Record<string, { bg: string; fg: string }> = {
+  components: { bg: "#e4f3f5", fg: "#1c8290" },
+  tools: { bg: "#eef0ff", fg: "#4a6fd4" },
+  manufacturing: { bg: "#fff0e0", fg: "#c25a14" },
+  "open-source": { bg: "#e7f5ee", fg: "#268a52" },
+  crowdfunding: { bg: "#fbe9ef", fg: "#c2415f" },
+};
+export function FeaturedThisWeek({ items = [] }: { items?: { id: number; name: string; tag?: string | null; category?: string | null; url?: string | null; logo?: string | null }[] }) {
+  if (!items.length) return null; // nothing featured yet -> hide the whole card
   return (
     <div style={{ background: "#fff", border: "1px solid #ececec", borderRadius: 12, padding: 17, marginBottom: 16 }}>
       <h3 style={{ fontSize: 14.5, fontWeight: 600, color: "#2f3438", marginBottom: 13 }}>Featured this week</h3>
-      {items.map((it) => (
-        <div key={it.name} style={{ display: "flex", gap: 11, padding: "9px 0", borderBottom: "1px solid #f0f2f2", alignItems: "center" }}>
-          <BrandLogo name={it.name} size={42} radius={8} />
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 13, fontWeight: 600, color: "#2f3438", lineHeight: 1.25 }}>{it.name}</div>
-            <span style={{ display: "inline-block", marginTop: 4, fontSize: 10.5, padding: "2px 7px", borderRadius: 4, background: it.tagBg, color: it.tagFg }}>{it.tag}</span>
+      {items.map((it) => {
+        const col = TAG_COLORS[it.category || ""] || { bg: "#eef5f6", fg: "#1c6e7e" };
+        const inner = (
+          <div style={{ display: "flex", gap: 11, padding: "9px 0", borderBottom: "1px solid #f0f2f2", alignItems: "center" }}>
+            <BrandLogo name={it.name} src={it.logo || undefined} size={42} radius={8} />
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, color: "#2f3438", lineHeight: 1.25 }}>{it.name}</div>
+              {it.tag && <span style={{ display: "inline-block", marginTop: 4, fontSize: 10.5, padding: "2px 7px", borderRadius: 4, background: col.bg, color: col.fg }}>{it.tag}</span>}
+            </div>
           </div>
-        </div>
-      ))}
-      <Link href="/archive" style={{ display: "block", textAlign: "center", marginTop: 12, fontSize: 13, fontWeight: 600, color: "#1aa0ab" }}>View all featured →</Link>
+        );
+        return it.url
+          ? <a key={it.id} href={it.url} target="_blank" rel="noreferrer" style={{ textDecoration: "none", display: "block" }}>{inner}</a>
+          : <div key={it.id}>{inner}</div>;
+      })}
     </div>
   );
 }

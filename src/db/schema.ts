@@ -57,6 +57,7 @@ export const resources = pgTable("resources", {
   pricing: text("pricing"),
   platforms: jsonb("platforms").$type<string[]>().default([]),
   isPick: boolean("is_pick").default(false),
+  isFeatured: boolean("is_featured").default(false),
   isPartner: boolean("is_partner").default(false),
   isSponsored: boolean("is_sponsored").default(false),
   isVerified: boolean("is_verified").default(false),
@@ -147,5 +148,17 @@ export const saves = pgTable("saves", {
 export const subscribers = pgTable("subscribers", {
   id: serial("id").primaryKey(),
   email: text("email").notNull().unique(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+// "Featured this week" — editor-curated sidebar list, managed in admin.
+export const featured = pgTable("featured", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  tag: text("tag"),                 // e.g. "New Board", "Manufacturing"
+  category: text("category"),       // taxonomy id, used to colour the tag pill
+  url: text("url"),                 // optional external link
+  logo: text("logo"),               // optional logo URL
+  sortOrder: integer("sort_order").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
