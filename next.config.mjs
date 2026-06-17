@@ -16,6 +16,21 @@ const nextConfig = {
           { key: "Content-Security-Policy", value: "frame-ancestors 'self' https://*.tindie.com https://tindie.com" },
         ],
       },
+      {
+        // Home page is dynamic — never let the CDN cache it, so newly published
+        // discoveries and edits show immediately (the /embed copy stays cached).
+        source: "/",
+        headers: [
+          { key: "Cache-Control", value: "no-store, must-revalidate" },
+        ],
+      },
+      {
+        // Same for the archive and directory (always reflect latest data).
+        source: "/archive",
+        headers: [
+          { key: "Cache-Control", value: "no-store, must-revalidate" },
+        ],
+      },
     ];
   },
 };
