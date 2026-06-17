@@ -61,23 +61,25 @@ const TAG_COLORS: Record<string, { bg: string; fg: string }> = {
 export function FeaturedThisWeek({ items = [] }: { items?: { id: number; name: string; tag?: string | null; category?: string | null; url?: string | null; logo?: string | null }[] }) {
   if (!items.length) return null; // nothing featured yet -> hide the whole card
   return (
-    <div style={{ background: "#fff", border: "1px solid #ececec", borderRadius: 12, padding: 17, marginBottom: 16 }}>
+    <div style={{ background: "#fff", border: "1px solid #ececec", borderRadius: 12, padding: "17px 18px", marginBottom: 16 }}>
       <h3 style={{ fontSize: 14.5, fontWeight: 600, color: "#2f3438", marginBottom: 13 }}>Featured this week</h3>
-      {items.map((it) => {
-        const col = TAG_COLORS[it.category || ""] || { bg: "#eef5f6", fg: "#1c6e7e" };
-        const inner = (
-          <div style={{ display: "flex", gap: 11, padding: "9px 0", borderBottom: "1px solid #f0f2f2", alignItems: "center" }}>
-            <BrandLogo name={it.name} src={it.logo || undefined} size={42} radius={8} />
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 600, color: "#2f3438", lineHeight: 1.25 }}>{it.name}</div>
-              {it.tag && <span style={{ display: "inline-block", marginTop: 4, fontSize: 10.5, padding: "2px 7px", borderRadius: 4, background: col.bg, color: col.fg }}>{it.tag}</span>}
+      <div className="featured-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 12 }}>
+        {items.map((it) => {
+          const col = TAG_COLORS[it.category || ""] || { bg: "#eef5f6", fg: "#1c6e7e" };
+          const inner = (
+            <div style={{ display: "flex", gap: 11, padding: "11px 13px", border: "1px solid #f0f2f2", borderRadius: 9, alignItems: "center", height: "100%" }}>
+              <BrandLogo name={it.name} src={it.logo || undefined} size={42} radius={8} />
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 600, color: "#2f3438", lineHeight: 1.25 }}>{it.name}</div>
+                {it.tag && <span style={{ display: "inline-block", marginTop: 4, fontSize: 10.5, padding: "2px 7px", borderRadius: 4, background: col.bg, color: col.fg }}>{it.tag}</span>}
+              </div>
             </div>
-          </div>
-        );
-        return it.url
-          ? <a key={it.id} href={it.url} target="_blank" rel="noreferrer" style={{ textDecoration: "none", display: "block" }}>{inner}</a>
-          : <div key={it.id}>{inner}</div>;
-      })}
+          );
+          return it.url
+            ? <a key={it.id} href={it.url} target="_blank" rel="noreferrer" style={{ textDecoration: "none", display: "block" }}>{inner}</a>
+            : <div key={it.id}>{inner}</div>;
+        })}
+      </div>
     </div>
   );
 }
