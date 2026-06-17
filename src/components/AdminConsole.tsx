@@ -247,24 +247,48 @@ function ReviewDrawer({ d, mode, onClose, call, callJson }: { d: Disc; mode: "re
 function Directory({ resources, call }: { resources: Res[]; call: any }) {
   const [edit, setEdit] = useState<Res | null>(null);
   const [creating, setCreating] = useState(false);
+  const [sel, setSel] = useState<number[]>([]);
+
+  const toggle = (id: number) => setSel((s) => s.includes(id) ? s.filter((x) => x !== id) : [...s, id]);
+  const clearSel = () => setSel([]);
+  async function bulk(action: string, confirmMsg: string) {
+    if (!sel.length) return;
+    if (!confirm(confirmMsg.replace("{n}", String(sel.length)))) return;
+    await call("/api/admin/resource", { action, ids: sel });
+    clearSel();
+  }
+
   return (
     <>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
         <span style={{ fontSize: 13, color: "#8a9499" }}>{resources.length} resources · grouped by category · use ▲▼ to set the order shown on the site</span>
         <button style={btnPrimary} onClick={() => setCreating(true)}>+ Add resource</button>
       </div>
+
+      {sel.length > 0 && (
+        <div style={{ position: "sticky", top: 0, zIndex: 5, display: "flex", alignItems: "center", gap: 12, background: "#eefafb", border: "1px solid #b6e6ea", borderRadius: 9, padding: "10px 14px", marginBottom: 14 }}>
+          <b style={{ fontSize: 13, color: "#176f7b" }}>{sel.length} selected</b>
+          <button style={btnGhost} onClick={() => bulk("bulkHide", "Hide {n} resource(s) from the public site? They stay in the database and can be unhidden later.")}>Hide</button>
+          <button style={btnGhost} onClick={() => bulk("bulkUnhide", "Make {n} resource(s) visible on the public site again?")}>Unhide</button>
+          <button style={btnDanger} onClick={() => bulk("bulkDelete", "Permanently delete {n} resource(s)? This cannot be undone.")}>Delete</button>
+          <button style={{ ...btnGhost, marginLeft: "auto" }} onClick={clearSel}>Clear</button>
+        </div>
+      )}
+
       {TAXONOMY.map((t: any) => {
         const group = resources.filter((r) => r.category === t.id);
         if (group.length === 0) return null;
+        const allSel = group.every((r) => sel.includes(r.id));
         return (
           <div key={t.id} style={{ marginBottom: 26 }}>
             <h3 style={{ fontSize: 15, fontWeight: 600, color: "#2f3438", margin: "0 0 8px", display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ width: 22, height: 22, borderRadius: 6, display: "inline-flex", alignItems: "center", justifyContent: "center", fontSize: 12, color: "#fff", background: t.col }}>{t.ic}</span>
               {t.name} <span style={{ fontSize: 12, fontWeight: 400, color: "#8a9499" }}>({group.length})</span>
             </h3>
-            <Table head={["#", "Resource", "Status", "Link", "Order", ""]}>
+            <Table head={[<input key="h" type="checkbox" checked={allSel} onChange={() => setSel((s) => allSel ? s.filter((x) => !group.some((r) => r.id === x)) : Array.from(new Set([...s, ...group.map((r) => r.id)])))} />, "#", "Resource", "Status", "Link", "Order", ""]}>
               {group.map((r, i) => (
-                <tr key={r.id}>
+                <tr key={r.id} style={sel.includes(r.id) ? { background: "#f3fbfc" } : undefined}>
+                  <Td><input type="checkbox" checked={sel.includes(r.id)} onChange={() => toggle(r.id)} /></Td>
                   <Td>{i + 1}</Td>
                   <Td><b>{r.name}</b></Td>
                   <Td>{r.status === "hidden" ? <span style={{ color: "#a8730a" }}>Hidden</span> : "Active"}</Td>
@@ -425,9 +449,9 @@ function Moderation({ submissions, call }: { submissions: Sub[]; call: any }) {
 }
 
 /* primitives */
-function Table({ head, children }: { head: string[]; children: React.ReactNode }) {
+function Table({ head, children }: { head: React.ReactNode[]; children: React.ReactNode }) {
   return <table style={{ width: "100%", borderCollapse: "collapse", background: "#fff", border: "1px solid #e3e9eb", borderRadius: 8, overflow: "hidden" }}>
-    <thead><tr>{head.map((h) => <th key={h} style={{ textAlign: "left", fontSize: 11, textTransform: "uppercase", letterSpacing: ".5px", color: "#6b7d85", padding: "11px 14px", borderBottom: "1px solid #e3e9eb", background: "#f8fafa", fontWeight: 600 }}>{h}</th>)}</tr></thead>
+    <thead><tr>{head.map((h, i) => <th key={i} style={{ textAlign: "left", fontSize: 11, textTransform: "uppercase", letterSpacing: ".5px", color: "#6b7d85", padding: "11px 14px", borderBottom: "1px solid #e3e9eb", background: "#f8fafa", fontWeight: 600 }}>{h}</th>)}</tr></thead>
     <tbody>{children}</tbody></table>;
 }
 const Td = ({ children, style }: { children: React.ReactNode; style?: React.CSSProperties }) => <td style={{ padding: "12px 14px", borderBottom: "1px solid #e3e9eb", fontSize: 13, ...style }}>{children}</td>;

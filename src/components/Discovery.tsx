@@ -15,7 +15,7 @@ export function DiscoveryGrid({ items, savedIds, signedIn }: { items: Discovery[
   const [q, setQ] = useState("");
   const [detail, setDetail] = useState<Discovery | null>(null);
 
-  const FILTERS = [["all","All"],["tools","Designing"],["crowdfunding","Selling"],["open-source","Sharing"],["components","Sourcing"],["manufacturing","Manufacturing"]];
+  const FILTERS = [["all","All"],["tools","Design & Develop"],["crowdfunding","Launch & Sell"],["open-source","Learn & Share"],["components","Parts & Resources"],["manufacturing","Manufacture"]];
   let shown = items.filter((d) => filter === "all" || d.category === filter);
   if (q) { const s = q.toLowerCase(); shown = shown.filter((d) => (d.title + d.summary + d.chips.join(" ") + d.sourceName).toLowerCase().includes(s)); }
 

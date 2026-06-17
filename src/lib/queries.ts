@@ -1,4 +1,4 @@
-import { and, desc, eq, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
   resources, discoveries, sources, submissions, comments, saves, subscribers, featured,
@@ -219,6 +219,16 @@ export async function updateResource(id: number, fields: Partial<typeof resource
 
 export async function deleteResource(id: number) {
   await db.delete(resources).where(eq(resources.id, id));
+}
+
+/* ---- bulk resource operations (batch select in admin) ---- */
+export async function bulkDeleteResources(ids: number[]) {
+  if (!ids.length) return;
+  await db.delete(resources).where(inArray(resources.id, ids));
+}
+export async function bulkSetResourceStatus(ids: number[], status: "active" | "hidden") {
+  if (!ids.length) return;
+  await db.update(resources).set({ status }).where(inArray(resources.id, ids));
 }
 
 export async function createResource(fields: {

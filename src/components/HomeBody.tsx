@@ -5,7 +5,7 @@ import { SubmitButton } from "@/components/PublicWidgets";
 import { FeaturedThisWeek } from "@/components/HomeSections";
 import { BrowseAndDirectory } from "@/components/DirectoryTabs";
 
-const HERO_CHIPS: [string, string, string][] = [["⬡", "Sourcing", "components"], ["✎", "Designing", "tools"], ["🏭", "Manufacturing", "manufacturing"], ["</>", "Sharing", "open-source"], ["◆", "Selling", "crowdfunding"]];
+const HERO_CHIPS: [string, string, string][] = [["⬡", "Parts & Resources", "components"], ["✎", "Design & Develop", "tools"], ["🏭", "Manufacture", "manufacturing"], ["</>", "Learn & Share", "open-source"], ["◆", "Launch & Sell", "crowdfunding"]];
 
 // Shared home content. `chrome` controls whether the Tindie header/footer render.
 // The /embed route passes chrome={false} so the page can be iframed into tindie.com cleanly.
