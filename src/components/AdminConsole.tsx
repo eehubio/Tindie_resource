@@ -86,17 +86,48 @@ function Stat({ k, v, c }: { k: string; v: string; c: string }) {
 function Inbox({ inbox, published, call, callJson }: { inbox: Disc[]; published: Disc[]; call: any; callJson: any }) {
   const [edit, setEdit] = useState<Disc | null>(null);
   const [view, setView] = useState<"review" | "published">("review");
+  const [sel, setSel] = useState<number[]>([]);
   const list = view === "review" ? inbox : published;
+
+  const toggle = (id: number) => setSel((s) => s.includes(id) ? s.filter((x) => x !== id) : [...s, id]);
+  const clearSel = () => setSel([]);
+  const switchView = (v: "review" | "published") => { setView(v); clearSel(); };
+  const allSel = list.length > 0 && list.every((d) => sel.includes(d.id));
+  async function bulk(action: string, confirmMsg: string) {
+    if (!sel.length) return;
+    if (!confirm(confirmMsg.replace("{n}", String(sel.length)))) return;
+    await call("/api/admin/discovery", { action, ids: sel });
+    clearSel();
+  }
+
   return (
     <>
       <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-        <button onClick={() => setView("review")} style={view === "review" ? subTabActive : subTab}>Needs Review ({inbox.length})</button>
-        <button onClick={() => setView("published")} style={view === "published" ? subTabActive : subTab}>Published ({published.length})</button>
+        <button onClick={() => switchView("review")} style={view === "review" ? subTabActive : subTab}>Needs Review ({inbox.length})</button>
+        <button onClick={() => switchView("published")} style={view === "published" ? subTabActive : subTab}>Published ({published.length})</button>
       </div>
-      <Table head={view === "review" ? ["Candidate", "Source", "Type", "AI", "Flag", ""] : ["Published item", "Source", "Type", "Comments", "", ""]}>
-        {list.length === 0 ? <Empty cols={6} msg={view === "review" ? "All caught up — no items waiting for review. 🎉" : "No published discoveries yet."} /> :
+
+      {sel.length > 0 && (
+        <div style={{ position: "sticky", top: 0, zIndex: 5, display: "flex", alignItems: "center", gap: 12, background: "#eefafb", border: "1px solid #b6e6ea", borderRadius: 9, padding: "10px 14px", marginBottom: 14 }}>
+          <b style={{ fontSize: 13, color: "#176f7b" }}>{sel.length} selected</b>
+          {view === "review"
+            ? <>
+                <button style={btnGhost} onClick={() => bulk("bulkApprove", "Publish {n} discovery(ies)?")}>Approve & publish</button>
+                <button style={btnGhost} onClick={() => bulk("bulkReject", "Reject {n} discovery(ies)? They leave the review queue.")}>Reject</button>
+              </>
+            : <button style={btnGhost} onClick={() => bulk("bulkUnpublish", "Take {n} discovery(ies) offline? They return to the review queue.")}>Unpublish</button>}
+          <button style={btnDanger} onClick={() => bulk("bulkDelete", "Permanently delete {n} discovery(ies) and their comments? This cannot be undone.")}>Delete</button>
+          <button style={{ ...btnGhost, marginLeft: "auto" }} onClick={clearSel}>Clear</button>
+        </div>
+      )}
+
+      <Table head={view === "review"
+        ? [<input key="h" type="checkbox" checked={allSel} onChange={() => setSel(allSel ? [] : list.map((d) => d.id))} />, "Candidate", "Source", "Type", "AI", "Flag", ""]
+        : [<input key="h" type="checkbox" checked={allSel} onChange={() => setSel(allSel ? [] : list.map((d) => d.id))} />, "Published item", "Source", "Type", "Comments", "", ""]}>
+        {list.length === 0 ? <Empty cols={7} msg={view === "review" ? "All caught up — no items waiting for review. 🎉" : "No published discoveries yet."} /> :
           list.map((d) => (
-            <tr key={d.id}>
+            <tr key={d.id} style={sel.includes(d.id) ? { background: "#f3fbfc" } : undefined}>
+              <Td><input type="checkbox" checked={sel.includes(d.id)} onChange={() => toggle(d.id)} /></Td>
               <Td><b>{d.title}</b></Td>
               <Td>{d.sourceName}</Td>
               <Td>{taxName(d.category)}</Td>

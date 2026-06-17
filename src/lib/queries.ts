@@ -160,6 +160,26 @@ export async function deleteDiscovery(id: number) {
   await db.delete(comments).where(eq(comments.discoveryId, id));
   await db.delete(discoveries).where(eq(discoveries.id, id));
 }
+
+/* ---- bulk discovery operations (batch select in admin) ---- */
+export async function bulkApproveDiscoveries(ids: number[]) {
+  if (!ids.length) return;
+  const today = new Date().toISOString().slice(0, 10);
+  await db.update(discoveries).set({ status: "published", publishDate: today }).where(inArray(discoveries.id, ids));
+}
+export async function bulkRejectDiscoveries(ids: number[]) {
+  if (!ids.length) return;
+  await db.update(discoveries).set({ status: "rejected" }).where(inArray(discoveries.id, ids));
+}
+export async function bulkUnpublishDiscoveries(ids: number[]) {
+  if (!ids.length) return;
+  await db.update(discoveries).set({ status: "needs_review" }).where(inArray(discoveries.id, ids));
+}
+export async function bulkDeleteDiscoveries(ids: number[]) {
+  if (!ids.length) return;
+  await db.delete(comments).where(inArray(comments.discoveryId, ids));
+  await db.delete(discoveries).where(inArray(discoveries.id, ids));
+}
 export async function updateDiscovery(id: number, fields: Partial<typeof discoveries.$inferInsert>) {
   const clean: any = { ...fields };
   // Normalize jsonb array fields to real arrays (guard against double-encoded strings).
