@@ -30,14 +30,14 @@ function Card({ r }: { r: any }) {
 }
 
 // Browse-by-category icon cards + directory tabs + filtered grid, all sharing one selected category.
-export function BrowseAndDirectory({ resources, perTab = 6 }: { resources: any[]; perTab?: number }) {
+export function BrowseAndDirectory({ resources }: { resources: any[] }) {
   const [cat, setCat] = useState<string>("all");
   const dirRef = useRef<HTMLDivElement>(null);
   const counts: Record<string, number> = {};
   resources.forEach((r) => { counts[r.category] = (counts[r.category] || 0) + 1; });
 
   const filtered = cat === "all" ? resources : resources.filter((r) => r.category === cat);
-  const shown = filtered.slice(0, perTab);
+  const shown = filtered;
 
   function pick(id: string) {
     setCat(id);
@@ -80,11 +80,10 @@ export function BrowseAndDirectory({ resources, perTab = 6 }: { resources: any[]
         <p style={{ color: "#8a9499", fontSize: 14, marginBottom: 18 }}>
           {cat === "all" ? `${resources.length}+ trusted platforms, tools, communities, and services for hardware creators.` : `${filtered.length} in ${TAXONOMY.find((t) => t.id === cat)?.name ?? cat}.`}
         </p>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(300px,1fr))", gap: 15 }}>
+        <div className="dir-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 15 }}>
           {shown.map((r) => <Card key={r.id} r={r} />)}
         </div>
         {filtered.length === 0 && <p style={{ color: "#8a9499", fontSize: 14, textAlign: "center", padding: "30px 0" }}>No resources in this category yet.</p>}
-        {filtered.length > perTab && <div style={{ textAlign: "center", marginTop: 20, fontSize: 13, color: "#8a9499" }}>Showing {perTab} of {filtered.length} — see the full directory page for all.</div>}
       </section>
     </>
   );

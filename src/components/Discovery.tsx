@@ -4,7 +4,7 @@ import { taxName, RELATED_PRODUCTS } from "@/lib/taxonomy";
 
 export type Discovery = {
   id: number; title: string; summary: string; why: string; category: string;
-  sourceName: string; icon: string | null; chips: string[]; license: string | null;
+  sourceName: string; sourceUrl?: string | null; icon: string | null; chips: string[]; license: string | null;
   availability: string | null; relatedTags: string[]; isSponsored: boolean | null;
   relatedProducts?: { name: string; seller?: string; price?: string; url?: string }[] | null;
   isPick: boolean | null; saveCount: number | null; commentCount: number | null;
@@ -60,7 +60,9 @@ function DiscoveryCard({ d, saved, signedIn, onOpen }: { d: Discovery; saved: bo
         <div onClick={(e) => e.stopPropagation()} style={{ display: "flex", gap: 2, marginTop: 11, borderTop: "1px solid #ececec", paddingTop: 8 }}>
           <button onClick={toggleSave} style={act(isSaved)}>♡ <span>{saves}</span> Save</button>
           <button onClick={onOpen} style={act(false)}>💬 <span>{d.commentCount || 0}</span></button>
-          <button onClick={(e) => { e.stopPropagation(); navigator.clipboard?.writeText(location.href); alert("Link copied"); }} style={act(false)}>↗ Share</button>
+          {d.sourceUrl
+            ? <a href={d.sourceUrl} target="_blank" rel="noreferrer" style={{ ...act(false), textDecoration: "none" }}>↗ Source</a>
+            : <button onClick={(e) => { e.stopPropagation(); navigator.clipboard?.writeText(location.href); alert("Link copied"); }} style={act(false)}>↗ Share</button>}
         </div>
       </div>
     </div>
@@ -107,6 +109,7 @@ function DetailDrawer({ d, saved, signedIn, onClose }: { d: Discovery; saved: bo
           <div style={{ fontSize: 12.5, color: "#8a9499", marginBottom: 16 }}><b>{d.sourceName}</b> · curated · <span style={{ background: "#eef7f8", color: "#22b8c4", padding: "1px 6px", borderRadius: 4, fontSize: 10 }}>Human-reviewed ✓</span></div>
           <Block h="What it is"><p>{d.summary}</p></Block>
           <div style={{ background: "#eef7f8", borderRadius: 9, padding: "13px 15px", marginBottom: 18 }}><h3 style={h3()}>Why it matters for Tindie</h3><p style={{ fontSize: 14 }}>{d.why}</p></div>
+          {d.sourceUrl && <a href={d.sourceUrl} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13.5, fontWeight: 600, color: "#fff", background: "#22b8c4", borderRadius: 8, padding: "9px 16px", textDecoration: "none", marginBottom: 18 }}>Read original on {d.sourceName} ↗</a>}
           <Block h="At a glance"><p style={{ fontSize: 13, color: "#8a9499" }}>License: {d.license} · Availability: {d.availability}</p></Block>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 18 }}>{(d.chips || []).map((c) => <span key={c} style={{ fontSize: 11, background: "#f0f5f6", color: "#1c6e7e", padding: "3px 9px", borderRadius: 5 }}>{c}</span>)}</div>
           {rel.length > 0 && (

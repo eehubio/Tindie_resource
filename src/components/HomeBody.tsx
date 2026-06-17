@@ -49,8 +49,7 @@ export function HomeBody({ resources, topDiscoveries, savedIds, signedIn, chrome
             <DiscoveryGrid items={topDiscoveries as any} savedIds={savedIds} signedIn={signedIn} />
           </section>
 
-          <BrowseAndDirectory resources={resources} perTab={6} />
-          <div style={{ textAlign: "center", marginTop: 4, marginBottom: 28 }}><Link href="/directory" style={{ fontSize: 13.5, fontWeight: 600, color: "#1aa0ab" }}>See all {resources.length}+ resources →</Link></div>
+          <BrowseAndDirectory resources={resources} />
         </main>
 
         <aside style={{ paddingTop: 26 }}>
