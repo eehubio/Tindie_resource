@@ -151,6 +151,15 @@ export async function approveDiscovery(id: number) {
 export async function rejectDiscovery(id: number) {
   await db.update(discoveries).set({ status: "rejected" }).where(eq(discoveries.id, id));
 }
+export async function unpublishDiscovery(id: number) {
+  // Take a published item offline but keep it — back to the review queue so it can be re-published.
+  await db.update(discoveries).set({ status: "needs_review" }).where(eq(discoveries.id, id));
+}
+export async function deleteDiscovery(id: number) {
+  // Permanently remove the discovery and its comments.
+  await db.delete(comments).where(eq(comments.discoveryId, id));
+  await db.delete(discoveries).where(eq(discoveries.id, id));
+}
 export async function updateDiscovery(id: number, fields: Partial<typeof discoveries.$inferInsert>) {
   const clean: any = { ...fields };
   // Normalize jsonb array fields to real arrays (guard against double-encoded strings).

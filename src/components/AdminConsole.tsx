@@ -104,7 +104,15 @@ function Inbox({ inbox, published, call, callJson }: { inbox: Disc[]; published:
                 ? <><Td><Score n={d.aiScore} /></Td>
                     <Td>{d.flag ? <span style={{ fontSize: 11, padding: "2px 8px", borderRadius: 20, background: d.flag === "risk" ? "#fbe9ed" : "#fdf2e0", color: d.flag === "risk" ? "#b0364f" : "#a8730a" }}>{d.flag}</span> : "—"}</Td></>
                 : <><Td>💬 {d.commentCount ?? 0}</Td><Td>—</Td></>}
-              <Td><button style={btnGhost} onClick={() => setEdit(d)}>{view === "review" ? "Review" : "Manage"}</button></Td>
+              {view === "review"
+                ? <Td><button style={btnGhost} onClick={() => setEdit(d)}>Review</button></Td>
+                : <Td>
+                    <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+                      <button style={btnGhost} onClick={() => setEdit(d)}>Manage</button>
+                      <button style={btnGhost} onClick={() => { if (confirm(`Take "${d.title}" offline? It returns to the review queue and can be re-published later.`)) call("/api/admin/discovery", { id: d.id, action: "unpublish" }); }}>Unpublish</button>
+                      <button style={btnDanger} onClick={() => { if (confirm(`Permanently delete "${d.title}"? This also deletes its comments and cannot be undone.`)) call("/api/admin/discovery", { id: d.id, action: "delete" }); }}>Delete</button>
+                    </div>
+                  </Td>}
             </tr>
           ))}
       </Table>

@@ -1,11 +1,11 @@
 export const dynamic = "force-dynamic";
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { approveDiscovery, rejectDiscovery, updateDiscovery, getComments, deleteComment } from "@/lib/queries";
+import { approveDiscovery, rejectDiscovery, updateDiscovery, getComments, deleteComment, unpublishDiscovery, deleteDiscovery } from "@/lib/queries";
 
 const schema = z.object({
   id: z.number(),
-  action: z.enum(["approve", "reject", "update", "comments", "deleteComment"]),
+  action: z.enum(["approve", "reject", "update", "comments", "deleteComment", "unpublish", "delete"]),
   fields: z.record(z.any()).optional(),
   commentId: z.number().optional(),
 });
@@ -19,5 +19,7 @@ export async function POST(req: Request) {
   else if (action === "update" && fields) await updateDiscovery(id, fields as any);
   else if (action === "comments") return NextResponse.json({ ok: true, comments: await getComments(id) });
   else if (action === "deleteComment" && commentId != null) await deleteComment(commentId);
+  else if (action === "unpublish") await unpublishDiscovery(id);
+  else if (action === "delete") await deleteDiscovery(id);
   return NextResponse.json({ ok: true });
 }
