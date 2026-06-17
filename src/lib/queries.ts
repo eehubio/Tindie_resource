@@ -152,7 +152,28 @@ export async function rejectDiscovery(id: number) {
   await db.update(discoveries).set({ status: "rejected" }).where(eq(discoveries.id, id));
 }
 export async function updateDiscovery(id: number, fields: Partial<typeof discoveries.$inferInsert>) {
-  await db.update(discoveries).set(fields).where(eq(discoveries.id, id));
+  const clean: any = { ...fields };
+  // Normalize jsonb array fields to real arrays (guard against double-encoded strings).
+  for (const key of ["relatedProducts", "chips", "relatedTags"] as const) {
+    const v: any = (clean as any)[key];
+    if (typeof v === "string") {
+      try { (clean as any)[key] = JSON.parse(v); } catch { (clean as any)[key] = []; }
+    }
+    if ((clean as any)[key] != null && !Array.isArray((clean as any)[key])) {
+      (clean as any)[key] = [];
+    }
+  }
+  // Write related_products via an explicit jsonb cast to avoid the postgres-js
+  // double-encoding quirk that stored arrays-of-objects as JSON strings.
+  const rp = clean.relatedProducts;
+  if (rp !== undefined) {
+    delete clean.relatedProducts;
+    await db.update(discoveries)
+      .set({ ...clean, relatedProducts: sql`${JSON.stringify(rp)}::jsonb` as any })
+      .where(eq(discoveries.id, id));
+  } else {
+    await db.update(discoveries).set(clean).where(eq(discoveries.id, id));
+  }
 }
 
 export async function toggleSource(id: number) {
