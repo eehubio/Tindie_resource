@@ -195,13 +195,19 @@ function ReviewDrawer({ d, mode, onClose, call, callJson }: { d: Disc; mode: "re
   return (
     <Drawer onClose={onClose} title={mode === "review" ? "Review discovery" : "Manage discovery"}>
       <Field label="Title"><input value={title} onChange={(e) => setTitle(e.target.value)} style={inp} /></Field>
+      {d.sourceUrl && (
+        <div style={{ margin: "0 0 14px", fontSize: 12.5 }}>
+          <span style={{ color: "#8a9499" }}>Source: </span>
+          <a href={d.sourceUrl} target="_blank" rel="noreferrer" style={{ color: "#1aa0ab", fontWeight: 600, wordBreak: "break-all" }}>{d.sourceName ? `${d.sourceName} ↗` : `${d.sourceUrl} ↗`}</a>
+        </div>
+      )}
       <Field label="Category">
         <select value={category} onChange={(e) => setCategory(e.target.value)} style={inp}>
           {TAXONOMY.map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
         </select>
       </Field>
-      <Field label="What it is (AI summary — editable)"><textarea value={summary} onChange={(e) => setSummary(e.target.value)} style={{ ...inp, minHeight: 70, resize: "vertical" }} /></Field>
-      <Field label="Why it matters for Tindie (editable)"><textarea value={why} onChange={(e) => setWhy(e.target.value)} style={{ ...inp, minHeight: 70, resize: "vertical" }} /></Field>
+      <Field label="What it is (AI summary — editable)"><textarea value={summary} onChange={(e) => setSummary(e.target.value)} style={{ ...inp, minHeight: 90, resize: "vertical" }} /></Field>
+      <Field label="Insights — AI take on the product/tech (editable)"><textarea value={why} onChange={(e) => setWhy(e.target.value)} style={{ ...inp, minHeight: 90, resize: "vertical" }} /></Field>
       <div style={{ display: "flex", gap: 10 }}>
         <Field label="License"><input value={license} onChange={(e) => setLicense(e.target.value)} style={inp} placeholder="e.g. Freemium / MIT" /></Field>
         <Field label="Availability"><input value={availability} onChange={(e) => setAvailability(e.target.value)} style={inp} placeholder="e.g. Live / Preorder" /></Field>

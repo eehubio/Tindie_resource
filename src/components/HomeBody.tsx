@@ -22,7 +22,7 @@ export function HomeBody({ resources, topDiscoveries, savedIds, signedIn, chrome
           <div className="hero-search-row" style={{ marginTop: 18, display: "flex", alignItems: "center", gap: 12 }}>
             <div style={{ flex: 1, display: "flex", alignItems: "center", background: "#fff", border: "1px solid #d6dee0", borderRadius: 9, padding: "3px 4px 3px 15px" }}>
               <span style={{ color: "#8a9499" }}>🔍</span>
-              <input placeholder="Search resources, tools, boards, projects…" style={{ flex: 1, border: 0, padding: "12px", fontSize: 15, outline: "none", background: "none" }} />
+              <input placeholder="Search resources…" style={{ flex: 1, border: 0, padding: "12px", fontSize: 15, outline: "none", background: "none" }} />
             </div>
             <SubmitButton />
           </div>

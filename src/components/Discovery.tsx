@@ -27,7 +27,7 @@ export function DiscoveryGrid({ items, savedIds, signedIn }: { items: Discovery[
           return <button key={id} onClick={() => setFilter(id)} style={pill(filter === id)}>{label} <span style={{ opacity: .6 }}>{cnt}</span></button>;
         })}
       </div>
-      <div className="disc-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 16 }}>
+      <div className="disc-grid" style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 16 }}>
         {shown.map((d) => <DiscoveryCard key={d.id} d={d} saved={savedIds.includes(d.id)} signedIn={signedIn} onOpen={() => setDetail(d)} />)}
         {shown.length === 0 && <div style={{ gridColumn: "1/-1", color: "#8a9499", padding: 30, textAlign: "center", border: "1px dashed #ececec", borderRadius: 10 }}>No discoveries match.</div>}
       </div>
@@ -54,9 +54,9 @@ function DiscoveryCard({ d, saved, signedIn, onOpen }: { d: Discovery; saved: bo
             : d.isPick ? <span style={{ fontSize: 10, fontWeight: 600, background: "#fdebdf", color: "#c25a14", padding: "2px 7px", borderRadius: 4 }}>★ Tindie Pick</span> : null}
         </div>
         <h4 style={{ fontSize: 15.5, margin: "0 0 6px", color: "#2f3438", lineHeight: 1.3 }}>{d.title}</h4>
-        <div style={{ fontSize: 11.5, color: "#8a9499", marginBottom: 9 }}><b style={{ color: "#5a6b72" }}>{d.sourceName}</b> · <span style={{ background: "#eef7f8", color: "#22b8c4", padding: "1px 6px", borderRadius: 4, fontSize: 10 }}>Human-reviewed ✓</span></div>
+        <div style={{ fontSize: 11.5, color: "#8a9499", marginBottom: 9 }}><b style={{ color: "#5a6b72" }}>{d.sourceName}</b></div>
         <div style={{ fontSize: 13, color: "#6b7479", flex: 1, lineHeight: 1.5 }}>{d.summary}</div>
-        <div style={{ fontSize: 12, color: "#1c6e7e", background: "#eef7f8", borderRadius: 7, padding: "8px 10px", marginTop: 11 }}><b>Why it matters:</b> {d.why}</div>
+        <div style={{ fontSize: 12, color: "#1c6e7e", background: "#eef7f8", borderRadius: 7, padding: "8px 10px", marginTop: 11 }}><b>Insights:</b> {d.why}</div>
         <div onClick={(e) => e.stopPropagation()} style={{ display: "flex", gap: 2, marginTop: 11, borderTop: "1px solid #ececec", paddingTop: 8 }}>
           <button onClick={toggleSave} style={act(isSaved)}>♡ <span>{saves}</span> Save</button>
           <button onClick={onOpen} style={act(false)}>💬 <span>{d.commentCount || 0}</span></button>
@@ -106,9 +106,9 @@ function DetailDrawer({ d, saved, signedIn, onClose }: { d: Discovery; saved: bo
         <div style={{ padding: 20 }}>
           <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".5px", color: "#22b8c4", fontWeight: 600 }}>{taxName(d.category)}{d.isSponsored ? " · Sponsored" : d.isPick ? " · Tindie Pick" : ""}</div>
           <div style={{ fontSize: 22, fontWeight: 600, color: "#2f3438", margin: "6px 0 4px" }}>{d.title}</div>
-          <div style={{ fontSize: 12.5, color: "#8a9499", marginBottom: 16 }}><b>{d.sourceName}</b> · curated · <span style={{ background: "#eef7f8", color: "#22b8c4", padding: "1px 6px", borderRadius: 4, fontSize: 10 }}>Human-reviewed ✓</span></div>
-          <Block h="What it is"><p>{d.summary}</p></Block>
-          <div style={{ background: "#eef7f8", borderRadius: 9, padding: "13px 15px", marginBottom: 18 }}><h3 style={h3()}>Why it matters for Tindie</h3><p style={{ fontSize: 14 }}>{d.why}</p></div>
+          <div style={{ fontSize: 12.5, color: "#8a9499", marginBottom: 16 }}><b>{d.sourceName}</b> · curated</div>
+          <Block h="What it is"><Bullets text={d.summary} /></Block>
+          <div style={{ background: "#eef7f8", borderRadius: 9, padding: "13px 15px", marginBottom: 18 }}><h3 style={h3()}>Insights</h3><Bullets text={d.why} fontSize={14} /></div>
           {d.sourceUrl && <a href={d.sourceUrl} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13.5, fontWeight: 600, color: "#fff", background: "#22b8c4", borderRadius: 8, padding: "9px 16px", textDecoration: "none", marginBottom: 18 }}>Read original on {d.sourceName} ↗</a>}
           <Block h="At a glance"><p style={{ fontSize: 13, color: "#8a9499" }}>License: {d.license} · Availability: {d.availability}</p></Block>
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 18 }}>{(d.chips || []).map((c) => <span key={c} style={{ fontSize: 11, background: "#f0f5f6", color: "#1c6e7e", padding: "3px 9px", borderRadius: 5 }}>{c}</span>)}</div>
@@ -151,6 +151,25 @@ function DetailDrawer({ d, saved, signedIn, onClose }: { d: Discovery; saved: bo
 
 function Block({ h, children }: { h: string; children: React.ReactNode }) {
   return <div style={{ marginBottom: 18 }}><h3 style={h3()}>{h}</h3>{children}</div>;
+}
+// Renders text as bullet points when it contains explicit markers (•, newlines,
+// or "- " line starts) or several sentences; otherwise as a single paragraph.
+function Bullets({ text, fontSize = 14.5 }: { text?: string | null; fontSize?: number }) {
+  const raw = (text || "").trim();
+  if (!raw) return null;
+  let parts: string[] = [];
+  if (/[•\n]|(^|\s)-\s/.test(raw)) {
+    parts = raw.split(/\n+|\s*•\s*|(?:^|\n)\s*-\s+/).map((s) => s.trim()).filter(Boolean);
+  } else {
+    const sentences = raw.match(/[^.!?]+[.!?]+/g);
+    if (sentences && sentences.length >= 2) parts = sentences.map((s) => s.trim());
+  }
+  if (parts.length <= 1) return <p style={{ fontSize, color: "#4a5358", lineHeight: 1.6 }}>{raw}</p>;
+  return (
+    <ul style={{ margin: 0, paddingLeft: 18, display: "flex", flexDirection: "column", gap: 6 }}>
+      {parts.map((p, i) => <li key={i} style={{ fontSize, color: "#4a5358", lineHeight: 1.55 }}>{p}</li>)}
+    </ul>
+  );
 }
 const h3 = () => ({ fontSize: 13, textTransform: "uppercase" as const, letterSpacing: ".4px", color: "#1c6e7e", marginBottom: 6 });
 const pill = (active: boolean) => ({ fontSize: 13, padding: "8px 14px", borderRadius: 8, border: "1px solid #ececec", background: active ? "#1c6e7e" : "#fff", color: active ? "#fff" : "#8a9499", cursor: "pointer", fontFamily: "inherit" });

@@ -104,8 +104,8 @@ Source: ${c.sourceName}
 Raw text: ${c.rawSummary}
 
 Write a JSON object (and nothing else) with these fields:
-- "summary": ONE original sentence describing what it is, in your own words. Never copy the raw text. Max 30 words.
-- "why": ONE original sentence on why it matters for Tindie sellers/buyers. Max 30 words.
+- "summary": 3-5 concise bullet points describing what it is, in your own words (never copy the raw text). Return as a single string with each bullet on its own line starting with "- ". Aim for ~250-300 words total across the bullets.
+- "why": an "Insights" section — your original AI take/commentary on this product or technology: why it's notable, who it's for, trade-offs, and the angle for Tindie sellers/buyers. 3-5 bullet points, single string with each bullet on its own line starting with "- ", ~250-300 words total.
 - "category": exactly one of ${JSON.stringify(VALID_CATEGORIES)} — pick the best fit (components=parts/sourcing, tools=design/EDA software, manufacturing=PCB/assembly/fabrication, open-source=open hardware/projects, crowdfunding=campaigns/marketplaces/selling).
 - "tags": array of 1-3 short topic tags (strings).
 
@@ -121,7 +121,7 @@ Return only the JSON object.`;
       },
       body: JSON.stringify({
         model: "claude-haiku-4-5-20251001",
-        max_tokens: 400,
+        max_tokens: 1500,
         messages: [{ role: "user", content: prompt }],
       }),
     });

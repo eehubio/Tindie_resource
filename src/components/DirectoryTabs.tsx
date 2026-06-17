@@ -19,11 +19,8 @@ function Card({ r }: { r: any }) {
         </div>
       </div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-        <span style={{ fontSize: 11, color: "#1aa0ab" }}>{r.url.replace(/^https?:\/\//, "").replace(/\/.*$/, "")}</span>
-        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-          <span style={{ fontSize: 10.5, background: "#f0f5f6", color: "#1c6e7e", padding: "3px 8px", borderRadius: 5 }}>{r.capLabel}</span>
-          <a href={r.url} target="_blank" rel="noreferrer" style={{ fontSize: 12, fontWeight: 600, color: "#22b8c4", border: "1px solid #22b8c4", borderRadius: 6, padding: "5px 14px" }}>Visit</a>
-        </div>
+        <span style={{ fontSize: 10.5, background: "#f0f5f6", color: "#1c6e7e", padding: "3px 8px", borderRadius: 5 }}>{r.capLabel}</span>
+        <a href={r.url} target="_blank" rel="noreferrer" style={{ fontSize: 12, fontWeight: 600, color: "#22b8c4", border: "1px solid #22b8c4", borderRadius: 6, padding: "5px 16px" }}>Visit ↗</a>
       </div>
     </div>
   );
@@ -46,45 +43,40 @@ export function BrowseAndDirectory({ resources }: { resources: any[] }) {
   }
 
   return (
-    <>
-      {/* Browse by category — clickable icon cards */}
-      <section style={{ padding: "6px 0 28px" }}>
-        <h2 style={{ fontSize: 21, fontWeight: 600, color: "#2f3438", marginBottom: 16 }}>Browse by category</h2>
-        <div className="cat-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 13 }}>
-          {TAXONOMY.map((t) => {
-            const active = cat === t.id;
-            return (
-              <button key={t.id} onClick={() => pick(t.id)}
-                style={{
-                  background: active ? `${t.col}10` : "#fff",
-                  border: active ? `1.5px solid ${t.col}` : "1px solid #ececec",
-                  borderRadius: 11, padding: "18px 14px", textAlign: "center",
-                  display: "flex", flexDirection: "column", alignItems: "center", gap: 9,
-                  cursor: "pointer", fontFamily: "inherit",
-                }}>
-                <div style={{ width: 46, height: 46, borderRadius: 11, background: `${t.col}1a`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, color: t.col }}>{t.ic}</div>
-                <h4 style={{ fontSize: 13, fontWeight: 600, color: "#2f3438", lineHeight: 1.25 }}>{t.name}</h4>
-                <p style={{ fontSize: 11.5, color: "#8a9499" }}>{counts[t.id] || 0} resources</p>
-              </button>
-            );
-          })}
-        </div>
-      </section>
+    <section ref={dirRef} style={{ padding: "6px 0 32px", scrollMarginTop: 80 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4, gap: 12, flexWrap: "wrap" }}>
+        <h2 style={{ fontSize: 21, fontWeight: 600, color: "#2f3438" }}>Curated Resource Directory</h2>
+        {cat !== "all" && <button onClick={() => setCat("all")} style={{ fontSize: 12.5, fontWeight: 600, color: "#1aa0ab", background: "none", border: 0, cursor: "pointer", fontFamily: "inherit" }}>← Show all categories</button>}
+      </div>
+      <p style={{ color: "#8a9499", fontSize: 14, marginBottom: 18 }}>
+        {cat === "all" ? `${resources.length}+ trusted platforms, tools, communities, and services for hardware creators.` : `${filtered.length} in ${TAXONOMY.find((t) => t.id === cat)?.name ?? cat}.`}
+      </p>
 
-      {/* Curated directory — filtered by the category cards above */}
-      <section ref={dirRef} style={{ padding: "6px 0 32px", scrollMarginTop: 80 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 4, gap: 12, flexWrap: "wrap" }}>
-          <h2 style={{ fontSize: 21, fontWeight: 600, color: "#2f3438" }}>Curated Resource Directory</h2>
-          {cat !== "all" && <button onClick={() => setCat("all")} style={{ fontSize: 12.5, fontWeight: 600, color: "#1aa0ab", background: "none", border: 0, cursor: "pointer", fontFamily: "inherit" }}>← Show all categories</button>}
-        </div>
-        <p style={{ color: "#8a9499", fontSize: 14, marginBottom: 18 }}>
-          {cat === "all" ? `${resources.length}+ trusted platforms, tools, communities, and services for hardware creators.` : `${filtered.length} in ${TAXONOMY.find((t) => t.id === cat)?.name ?? cat}.`}
-        </p>
-        <div className="dir-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 15 }}>
-          {shown.map((r) => <Card key={r.id} r={r} />)}
-        </div>
-        {filtered.length === 0 && <p style={{ color: "#8a9499", fontSize: 14, textAlign: "center", padding: "30px 0" }}>No resources in this category yet.</p>}
-      </section>
-    </>
+      {/* Category filter cards (formerly the separate "Browse by category" section) */}
+      <div className="cat-grid" style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 13, marginBottom: 22 }}>
+        {TAXONOMY.map((t) => {
+          const active = cat === t.id;
+          return (
+            <button key={t.id} onClick={() => pick(t.id)}
+              style={{
+                background: active ? `${t.col}10` : "#fff",
+                border: active ? `1.5px solid ${t.col}` : "1px solid #ececec",
+                borderRadius: 11, padding: "16px 14px", textAlign: "center",
+                display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
+                cursor: "pointer", fontFamily: "inherit",
+              }}>
+              <div style={{ width: 44, height: 44, borderRadius: 11, background: `${t.col}1a`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, color: t.col }}>{t.ic}</div>
+              <h4 style={{ fontSize: 13, fontWeight: 600, color: "#2f3438", lineHeight: 1.25 }}>{t.name}</h4>
+              <p style={{ fontSize: 11.5, color: "#8a9499" }}>{counts[t.id] || 0} resources</p>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="dir-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 15 }}>
+        {shown.map((r) => <Card key={r.id} r={r} />)}
+      </div>
+      {filtered.length === 0 && <p style={{ color: "#8a9499", fontSize: 14, textAlign: "center", padding: "30px 0" }}>No resources in this category yet.</p>}
+    </section>
   );
 }
