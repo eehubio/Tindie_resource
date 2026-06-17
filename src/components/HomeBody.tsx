@@ -2,7 +2,7 @@ import Link from "next/link";
 import { TindieHeader, TindieFooter } from "@/components/Chrome";
 import { DiscoveryGrid } from "@/components/Discovery";
 import { SubmitButton } from "@/components/PublicWidgets";
-import { FeaturedCards, FeaturedThisWeek } from "@/components/HomeSections";
+import { FeaturedThisWeek } from "@/components/HomeSections";
 import { BrowseAndDirectory } from "@/components/DirectoryTabs";
 
 const HERO_CHIPS: [string, string, string][] = [["⬡", "Sourcing", "components"], ["✎", "Designing", "tools"], ["🏭", "Manufacturing", "manufacturing"], ["</>", "Sharing", "open-source"], ["◆", "Selling", "crowdfunding"]];
@@ -32,9 +32,6 @@ export function HomeBody({ resources, topDiscoveries, savedIds, signedIn, chrome
             </div>
           </div>
           <Mascot />
-        </div>
-        <div className="wrap" style={{ padding: "8px 24px 28px" }}>
-          <FeaturedCards />
         </div>
       </div>
 
