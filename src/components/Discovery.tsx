@@ -181,8 +181,8 @@ function Bullets({ text, fontSize = 14.5 }: { text?: string | null; fontSize?: n
   }
   if (parts.length <= 1) return <p style={{ fontSize, color: "#4a5358", lineHeight: 1.6 }}>{parts[0] || raw.replace(/^\s*[-•]\s*/, "")}</p>;
   return (
-    <ul style={{ margin: 0, paddingLeft: 18, display: "flex", flexDirection: "column", gap: 6 }}>
-      {parts.map((p, i) => <li key={i} style={{ fontSize, color: "#4a5358", lineHeight: 1.55 }}>{p}</li>)}
+    <ul style={{ margin: 0, paddingLeft: 22, listStyleType: "disc", listStylePosition: "outside" }}>
+      {parts.map((p, i) => <li key={i} style={{ fontSize, color: "#4a5358", lineHeight: 1.55, marginBottom: 6, display: "list-item" }}>{p}</li>)}
     </ul>
   );
 }
