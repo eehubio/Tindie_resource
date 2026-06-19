@@ -20,7 +20,7 @@ const VALID_CATEGORIES = TAXONOMY.map((t) => t.id);
 export async function POST(req: Request) {
   // ---- auth ----
   const auth = req.headers.get("authorization");
-  const secret = process.env.INGEST_SECRET;
+  const secret = process.env.TINDIE_INGEST_SECRET || process.env.INGEST_SECRET;
   if (!secret) {
     return NextResponse.json(
       { error: "Server misconfigured: INGEST_SECRET is not set" },
