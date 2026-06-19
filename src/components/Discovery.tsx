@@ -55,8 +55,8 @@ function DiscoveryCard({ d, saved, signedIn, onOpen }: { d: Discovery; saved: bo
         </div>
         <h4 style={{ fontSize: 15.5, margin: "0 0 6px", color: "#2f3438", lineHeight: 1.3 }}>{d.title}</h4>
         <div style={{ fontSize: 11.5, color: "#8a9499", marginBottom: 9 }}><b style={{ color: "#5a6b72" }}>{d.sourceName}</b></div>
-        <div style={{ fontSize: 13, color: "#6b7479", flex: 1, lineHeight: 1.5 }}>{d.summary}</div>
-        <div style={{ fontSize: 12, color: "#1c6e7e", background: "#eef7f8", borderRadius: 7, padding: "8px 10px", marginTop: 11 }}><b>Insights:</b> {d.why}</div>
+        <div style={{ fontSize: 13, color: "#6b7479", flex: 1, lineHeight: 1.5 }}>{flatten(d.summary)}</div>
+        <div style={{ fontSize: 12, color: "#1c6e7e", background: "#eef7f8", borderRadius: 7, padding: "8px 10px", marginTop: 11 }}><b>Insights:</b> {flatten(d.why)}</div>
         <div onClick={(e) => e.stopPropagation()} style={{ display: "flex", gap: 2, marginTop: 11, borderTop: "1px solid #ececec", paddingTop: 8 }}>
           <button onClick={toggleSave} style={act(isSaved)}>♡ <span>{saves}</span> Save</button>
           <button onClick={onOpen} style={act(false)}>💬 <span>{d.commentCount || 0}</span></button>
@@ -154,17 +154,32 @@ function Block({ h, children }: { h: string; children: React.ReactNode }) {
 }
 // Renders text as bullet points when it contains explicit markers (•, newlines,
 // or "- " line starts) or several sentences; otherwise as a single paragraph.
+// Card view: flatten bullet-style text ("- a\n- b") into one clean line.
+function flatten(text?: string | null, max = 180): string {
+  let s = (text || "").trim();
+  if (!s) return "";
+  // strip leading bullet markers and collapse newlines into separators
+  s = s.replace(/^\s*[-•]\s*/gm, "").replace(/\n+/g, " · ").replace(/\s{2,}/g, " ").trim();
+  if (s.length > max) s = s.slice(0, max).replace(/[\s·]+\S*$/, "") + "…";
+  return s;
+}
+
 function Bullets({ text, fontSize = 14.5 }: { text?: string | null; fontSize?: number }) {
   const raw = (text || "").trim();
   if (!raw) return null;
   let parts: string[] = [];
-  if (/[•\n]|(^|\s)-\s/.test(raw)) {
-    parts = raw.split(/\n+|\s*•\s*|(?:^|\n)\s*-\s+/).map((s) => s.trim()).filter(Boolean);
+  if (/[•\n]|(?:^|\s)[-]\s/.test(raw)) {
+    // Split on newlines and/or bullet markers, then strip any leading "- " / "• ".
+    parts = raw
+      .split(/\n+|(?:\s•\s)/)
+      .flatMap((seg) => seg.split(/(?:^|\s)[-]\s+/))
+      .map((s) => s.replace(/^\s*[-•]\s*/, "").trim())
+      .filter(Boolean);
   } else {
     const sentences = raw.match(/[^.!?]+[.!?]+/g);
     if (sentences && sentences.length >= 2) parts = sentences.map((s) => s.trim());
   }
-  if (parts.length <= 1) return <p style={{ fontSize, color: "#4a5358", lineHeight: 1.6 }}>{raw}</p>;
+  if (parts.length <= 1) return <p style={{ fontSize, color: "#4a5358", lineHeight: 1.6 }}>{parts[0] || raw.replace(/^\s*[-•]\s*/, "")}</p>;
   return (
     <ul style={{ margin: 0, paddingLeft: 18, display: "flex", flexDirection: "column", gap: 6 }}>
       {parts.map((p, i) => <li key={i} style={{ fontSize, color: "#4a5358", lineHeight: 1.55 }}>{p}</li>)}
