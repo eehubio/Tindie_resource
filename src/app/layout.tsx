@@ -32,12 +32,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <Providers>{children}</Providers>
 
-        {/* 给底部 tab bar 留出空间，避免内容被遮挡 */}
-        <div
-          style={{ height: "calc(56px + env(safe-area-inset-bottom))" }}
-          aria-hidden="true"
-        />
-
         <BottomTabBar />
         <ServiceWorkerRegister />
       </body>

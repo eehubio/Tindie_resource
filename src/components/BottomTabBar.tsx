@@ -71,29 +71,41 @@ const TABS: Tab[] = [
 export default function BottomTabBar() {
   const pathname = usePathname();
 
-  // Hide the tab bar on admin/login — those aren't part of the app shell.
-  if (pathname?.startsWith('/admin') || pathname?.startsWith('/login')) {
+  // Hide the tab bar on admin/login, and on /embed (which is iframed into
+  // tindie.com with the host's own header/footer — no app shell there).
+  if (
+    pathname?.startsWith('/admin') ||
+    pathname?.startsWith('/login') ||
+    pathname?.startsWith('/embed')
+  ) {
     return null;
   }
 
   return (
-    <nav
-      aria-label="Primary"
-      style={{
-        position: 'fixed',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        zIndex: 50,
-        display: 'flex',
-        background: 'rgba(255,255,255,0.92)',
-        backdropFilter: 'saturate(180%) blur(12px)',
-        WebkitBackdropFilter: 'saturate(180%) blur(12px)',
-        borderTop: '1px solid #e6e8eb',
-        // Respect the iPhone home-indicator safe area.
-        paddingBottom: 'env(safe-area-inset-bottom)',
-      }}
-    >
+    <>
+      {/* Spacer so fixed content isn't covered by the bar. Lives here so it
+          also disappears on /embed, /admin, /login (early return above). */}
+      <div
+        style={{ height: 'calc(56px + env(safe-area-inset-bottom))' }}
+        aria-hidden="true"
+      />
+      <nav
+        aria-label="Primary"
+        style={{
+          position: 'fixed',
+          bottom: 0,
+          left: 0,
+          right: 0,
+          zIndex: 50,
+          display: 'flex',
+          background: 'rgba(255,255,255,0.92)',
+          backdropFilter: 'saturate(180%) blur(12px)',
+          WebkitBackdropFilter: 'saturate(180%) blur(12px)',
+          borderTop: '1px solid #e6e8eb',
+          // Respect the iPhone home-indicator safe area.
+          paddingBottom: 'env(safe-area-inset-bottom)',
+        }}
+      >
       {TABS.map((tab) => {
         const active =
           tab.enabled &&
@@ -167,6 +179,7 @@ export default function BottomTabBar() {
           </Link>
         );
       })}
-    </nav>
+      </nav>
+    </>
   );
 }
