@@ -28,23 +28,15 @@ export function DiscoveryGrid({ items, savedIds, signedIn }: { items: Discovery[
         })}
       </div>
       <div className="disc-grid" style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 16 }}>
-        {shown.map((d) => <DiscoveryCard key={d.id} d={d} saved={savedIds.includes(d.id)} signedIn={signedIn} onOpen={() => setDetail(d)} />)}
+        {shown.map((d) => <DiscoveryCard key={d.id} d={d} onOpen={() => setDetail(d)} />)}
         {shown.length === 0 && <div style={{ gridColumn: "1/-1", color: "#8a9499", padding: 30, textAlign: "center", border: "1px dashed #ececec", borderRadius: 10 }}>No discoveries match.</div>}
       </div>
-      {detail && <DetailDrawer d={detail} saved={savedIds.includes(detail.id)} signedIn={signedIn} onClose={() => setDetail(null)} />}
+      {detail && <DetailDrawer d={detail} onClose={() => setDetail(null)} />}
     </>
   );
 }
 
-function DiscoveryCard({ d, saved, signedIn, onOpen }: { d: Discovery; saved: boolean; signedIn: boolean; onOpen: () => void }) {
-  const [isSaved, setSaved] = useState(saved);
-  const [saves, setSaves] = useState(d.saveCount || 0);
-  async function toggleSave(e: React.MouseEvent) {
-    e.stopPropagation();
-    if (!signedIn) { alert("Sign in to save discoveries."); return; }
-    const res = await fetch("/api/discoveries/save", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ discoveryId: d.id }) });
-    if (res.ok) { const j = await res.json(); setSaved(j.saved); setSaves((n) => n + (j.saved ? 1 : -1)); }
-  }
+function DiscoveryCard({ d, onOpen }: { d: Discovery; onOpen: () => void }) {
   return (
     <div onClick={onOpen} style={{ background: "#fff", border: "1px solid #ececec", borderRadius: 10, display: "flex", flexDirection: "column", cursor: "pointer" }}>
       <div style={{ padding: "15px 16px", display: "flex", flexDirection: "column", flex: 1 }}>
@@ -58,8 +50,6 @@ function DiscoveryCard({ d, saved, signedIn, onOpen }: { d: Discovery; saved: bo
         <div style={{ fontSize: 13, color: "#6b7479", flex: 1, lineHeight: 1.5 }}>{flatten(d.summary)}</div>
         <div style={{ fontSize: 12, color: "#1c6e7e", background: "#eef7f8", borderRadius: 7, padding: "8px 10px", marginTop: 11 }}><b>Insights:</b> {flatten(d.why)}</div>
         <div onClick={(e) => e.stopPropagation()} style={{ display: "flex", gap: 2, marginTop: 11, borderTop: "1px solid #ececec", paddingTop: 8 }}>
-          <button onClick={toggleSave} style={act(isSaved)}>♡ <span>{saves}</span> Save</button>
-          <button onClick={onOpen} style={act(false)}>💬 <span>{d.commentCount || 0}</span></button>
           {d.sourceUrl
             ? <a href={d.sourceUrl} target="_blank" rel="noreferrer" style={{ ...act(false), textDecoration: "none" }}>↗ Source</a>
             : <button onClick={(e) => { e.stopPropagation(); navigator.clipboard?.writeText(location.href); alert("Link copied"); }} style={act(false)}>↗ Share</button>}
@@ -69,11 +59,7 @@ function DiscoveryCard({ d, saved, signedIn, onOpen }: { d: Discovery; saved: bo
   );
 }
 
-function DetailDrawer({ d, saved, signedIn, onClose }: { d: Discovery; saved: boolean; signedIn: boolean; onClose: () => void }) {
-  const [comments, setComments] = useState<{ authorName: string; tag: string | null; body: string }[]>([]);
-  const [body, setBody] = useState("");
-  const [tag, setTag] = useState("");
-  const [loaded, setLoaded] = useState(false);
+function DetailDrawer({ d, onClose }: { d: Discovery; onClose: () => void }) {
   // Prefer products the editor manually added in the admin Review drawer (stored in DB).
   // Fall back to tag-based suggestions only if none were set.
   // relatedProducts may arrive as an array (normal) or, depending on driver, a JSON string. Handle both.
@@ -86,14 +72,6 @@ function DetailDrawer({ d, saved, signedIn, onClose }: { d: Discovery; saved: bo
   const manual = productList.map((p) => ({ t: p.name, s: p.seller || "", p: p.price || "", ic: "🛒", url: p.url || "" }));
   const fallback = (d.relatedTags || []).flatMap((k) => RELATED_PRODUCTS[k] || []).map((r: any) => ({ ...r, url: "" }));
   const rel = manual.length > 0 ? manual : fallback;
-  if (!loaded) { setLoaded(true); fetch(`/api/discoveries/${d.id}/comments`).then((r) => r.ok ? r.json() : []).then((j) => setComments(j || [])).catch(() => {}); }
-
-  async function post() {
-    if (!body.trim()) return;
-    const res = await fetch("/api/discoveries/comment", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ discoveryId: d.id, body, tag: tag || undefined }) });
-    if (res.ok) { setComments((c) => [{ authorName: "you", tag: tag || null, body }, ...c]); setBody(""); setTag(""); }
-    else { const j = await res.json().catch(() => ({})); alert(j.error || "Could not post"); }
-  }
 
   return (
     <>
@@ -130,19 +108,6 @@ function DetailDrawer({ d, saved, signedIn, onClose }: { d: Discovery; saved: bo
               })}
             </div>
           )}
-          <Block h="Community discussion">
-            <textarea value={body} onChange={(e) => setBody(e.target.value)} placeholder="Share a technical note, experience or alternative…" style={{ width: "100%", border: "1px solid #ececec", borderRadius: 8, padding: 10, fontSize: 13.5, minHeight: 60, resize: "vertical", fontFamily: "inherit" }} />
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", margin: "8px 0" }}>
-              {["Technical question","User experience","Alternative product","Manufacturing experience"].map((t) => (
-                <span key={t} onClick={() => setTag(tag === t ? "" : t)} style={{ fontSize: 11.5, border: "1px solid #ececec", background: tag === t ? "#1c6e7e" : "#fff", color: tag === t ? "#fff" : "#8a9499", padding: "5px 10px", borderRadius: 16, cursor: "pointer" }}>{t}</span>
-              ))}
-            </div>
-            <button onClick={post} style={{ background: "#22b8c4", color: "#fff", border: 0, borderRadius: 8, padding: "11px 16px", fontWeight: 600, fontSize: 13.5, cursor: "pointer" }}>Post comment</button>
-            <div style={{ marginTop: 8 }}>
-              {comments.length === 0 ? <p style={{ fontSize: 13, color: "#8a9499", padding: "10px 0" }}>No comments yet — start the discussion.</p> :
-                comments.map((c, i) => <div key={i} style={{ borderTop: "1px solid #ececec", padding: "12px 0", fontSize: 13.5 }}><div style={{ fontSize: 11.5, color: "#8a9499", marginBottom: 3 }}>@{c.authorName} {c.tag ? `· ${c.tag}` : ""}</div>{c.body}</div>)}
-            </div>
-          </Block>
         </div>
       </div>
     </>
