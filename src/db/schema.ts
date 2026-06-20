@@ -162,3 +162,20 @@ export const featured = pgTable("featured", {
   sortOrder: integer("sort_order").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
+
+// Editor-curated recommendation banner shown full-width on the home page.
+// Description is stored as Markdown; the front-end renders it. Impressions and
+// clicks are counted via /api/recommendation/track. Scheduling via startsAt/endsAt.
+export const recommendations = pgTable("recommendations", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  body: text("body").notNull().default(""),   // Markdown
+  url: text("url"),                             // click-through target (optional)
+  ctaLabel: text("cta_label").default("Learn more"),
+  startsAt: timestamp("starts_at"),             // null = active immediately
+  endsAt: timestamp("ends_at"),                 // null = no end
+  status: varchar("status", { length: 12 }).notNull().default("active"), // active | paused
+  impressions: integer("impressions").notNull().default(0),
+  clicks: integer("clicks").notNull().default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});

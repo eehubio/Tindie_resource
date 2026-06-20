@@ -1,7 +1,7 @@
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/db";
 import {
-  resources, discoveries, sources, submissions, comments, saves, subscribers, featured,
+  resources, discoveries, sources, submissions, comments, saves, subscribers, featured, recommendations,
 } from "@/db/schema";
 
 /* ---------------- public reads ---------------- */
@@ -329,4 +329,68 @@ export async function moveFeatured(id: number, dir: "up" | "down") {
   for (let i = 0; i < order.length; i++) {
     await db.update(featured).set({ sortOrder: i }).where(eq(featured.id, order[i]));
   }
+}
+
+/* ---------------- recommendations (home banner) ---------------- */
+
+// Public: the single recommendation to show right now — active, within its
+// scheduling window, most recent first.
+export async function getActiveRecommendation() {
+  const now = new Date();
+  const rows = await db.select().from(recommendations)
+    .where(eq(recommendations.status, "active"))
+    .orderBy(desc(recommendations.createdAt));
+  const live = rows.find((r) => {
+    const okStart = !r.startsAt || new Date(r.startsAt as any) <= now;
+    const okEnd = !r.endsAt || new Date(r.endsAt as any) >= now;
+    return okStart && okEnd;
+  });
+  return live || null;
+}
+
+// Admin: full list with counts.
+export async function getAllRecommendations() {
+  return db.select().from(recommendations).orderBy(desc(recommendations.createdAt));
+}
+
+export async function createRecommendation(fields: {
+  title: string; body?: string; url?: string; ctaLabel?: string;
+  startsAt?: string | null; endsAt?: string | null; status?: string;
+}) {
+  await db.insert(recommendations).values({
+    title: fields.title,
+    body: fields.body || "",
+    url: fields.url || null,
+    ctaLabel: fields.ctaLabel || "Learn more",
+    startsAt: fields.startsAt ? new Date(fields.startsAt) : null,
+    endsAt: fields.endsAt ? new Date(fields.endsAt) : null,
+    status: fields.status === "paused" ? "paused" : "active",
+  });
+}
+
+export async function updateRecommendation(id: number, fields: {
+  title?: string; body?: string; url?: string; ctaLabel?: string;
+  startsAt?: string | null; endsAt?: string | null; status?: string;
+}) {
+  const patch: Record<string, any> = {};
+  if (fields.title !== undefined) patch.title = fields.title;
+  if (fields.body !== undefined) patch.body = fields.body;
+  if (fields.url !== undefined) patch.url = fields.url || null;
+  if (fields.ctaLabel !== undefined) patch.ctaLabel = fields.ctaLabel || "Learn more";
+  if (fields.startsAt !== undefined) patch.startsAt = fields.startsAt ? new Date(fields.startsAt) : null;
+  if (fields.endsAt !== undefined) patch.endsAt = fields.endsAt ? new Date(fields.endsAt) : null;
+  if (fields.status !== undefined) patch.status = fields.status === "paused" ? "paused" : "active";
+  if (Object.keys(patch).length === 0) return;
+  await db.update(recommendations).set(patch).where(eq(recommendations.id, id));
+}
+
+export async function deleteRecommendation(id: number) {
+  await db.delete(recommendations).where(eq(recommendations.id, id));
+}
+
+export async function trackRecommendation(id: number, kind: "impression" | "click") {
+  const col = kind === "click" ? recommendations.clicks : recommendations.impressions;
+  await db.update(recommendations)
+    .set({ [kind === "click" ? "clicks" : "impressions"]: sql`${col} + 1` })
+    .where(eq(recommendations.id, id));
 }

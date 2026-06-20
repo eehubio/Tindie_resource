@@ -5,11 +5,12 @@ import { SubmitButton } from "@/components/PublicWidgets";
 import { FeaturedThisWeek } from "@/components/HomeSections";
 import { BrowseAndDirectory } from "@/components/DirectoryTabs";
 import { HomeSearchProvider, HomeSearchInput } from "@/components/HomeSearch";
+import { RecommendationBanner } from "@/components/RecommendationBanner";
 
 // Shared home content. `chrome` controls whether the Tindie header/footer render.
 // The /embed route passes chrome={false} so the page can be iframed into tindie.com cleanly.
-export function HomeBody({ resources, topDiscoveries, savedIds, signedIn, chrome = true }:
-  { resources: any[]; topDiscoveries: any[]; savedIds: number[]; signedIn: boolean; chrome?: boolean }) {
+export function HomeBody({ resources, topDiscoveries, savedIds, signedIn, recommendation, chrome = true }:
+  { resources: any[]; topDiscoveries: any[]; savedIds: number[]; signedIn: boolean; recommendation?: any; chrome?: boolean }) {
   const featured = (resources || []).filter((r: any) => r.isFeatured).slice(0, 6).map((r: any) => ({ id: r.id, name: r.name, tag: r.capLabel, category: r.category, url: r.url, logo: r.logo }));
   return (
     <>
@@ -23,7 +24,8 @@ export function HomeBody({ resources, topDiscoveries, savedIds, signedIn, chrome
             <HomeSearchInput />
             <SubmitButton />
           </div>
-          {/* Category chips removed — slot reserved for the upcoming recommendation banner. */}
+          {/* Recommendation banner — full width, editor-managed, replaces old category chips. */}
+          <RecommendationBanner rec={recommendation || null} />
         </div>
       </div>
 

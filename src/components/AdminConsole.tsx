@@ -6,10 +6,10 @@ import { DAILY_TARGET, taxName, TAXONOMY } from "@/lib/taxonomy";
 type Disc = any; type Res = any; type Src = any; type Sub = any;
 type Stats = { needsReview: number; scheduled: number; approvedToday: number; brokenLinks: number };
 
-export function AdminConsole({ inbox, published, resources, sources, submissions, stats }:
-  { inbox: Disc[]; published: Disc[]; resources: Res[]; sources: Src[]; submissions: Sub[]; stats: Stats }) {
+export function AdminConsole({ inbox, published, resources, sources, submissions, stats, recommendations }:
+  { inbox: Disc[]; published: Disc[]; resources: Res[]; sources: Src[]; submissions: Sub[]; stats: Stats; recommendations?: any[] }) {
   const router = useRouter();
-  const [tab, setTab] = useState<"dash" | "inbox" | "dir" | "src" | "mod">("dash");
+  const [tab, setTab] = useState<"dash" | "inbox" | "dir" | "src" | "mod" | "rec">("dash");
   const [busy, setBusy] = useState(false);
 
   async function call(url: string, body: any) {
@@ -32,7 +32,7 @@ export function AdminConsole({ inbox, published, resources, sources, submissions
       {/* sidebar */}
       <aside style={{ width: 220, background: "#0f343f", color: "#cfe1e6", flex: "none", padding: "0" }}>
         <div style={{ padding: "18px 20px", fontWeight: 700, fontSize: 18, color: "#fff", borderBottom: "1px solid #1d5163" }}>tindie<span style={{ color: "#f2762e" }}>.</span> <span style={{ fontSize: 11, color: "#7fa0a9", fontWeight: 400 }}>Admin</span></div>
-        {[["dash", "📊 Dashboard"], ["inbox", `📥 Discovery Inbox (${inbox.length})`], ["dir", "📚 Resource Directory"], ["src", "🔗 Sources"], ["mod", `🛡️ Moderation (${submissions.length})`]].map(([k, label]) => (
+        {[["dash", "📊 Dashboard"], ["inbox", `📥 Discovery Inbox (${inbox.length})`], ["dir", "📚 Resource Directory"], ["src", "🔗 Sources"], ["mod", `🛡️ Moderation (${submissions.length})`], ["rec", "📣 Recommendations"]].map(([k, label]) => (
           <div key={k} onClick={() => setTab(k as any)} style={{ padding: "11px 20px", fontSize: 13.5, cursor: "pointer", borderLeft: `3px solid ${tab === k ? "#f2762e" : "transparent"}`, background: tab === k ? "#16404d" : "transparent", color: tab === k ? "#fff" : "#cfe1e6" }}>{label}</div>
         ))}
         <div style={{ padding: "14px 20px", fontSize: 11, color: "#5f808a", marginTop: 20 }}>Connected to live database</div>
@@ -49,6 +49,7 @@ export function AdminConsole({ inbox, published, resources, sources, submissions
           {tab === "dir" && <Directory resources={resources} call={call} />}
           {tab === "src" && <Sources sources={sources} call={call} />}
           {tab === "mod" && <Moderation submissions={submissions} call={call} />}
+          {tab === "rec" && <Recommendations recommendations={recommendations || []} call={call} />}
         </div>
       </div>
     </div>
@@ -520,3 +521,102 @@ const btnPrimary: React.CSSProperties = { background: "#22b8c4", color: "#fff", 
 const btnDanger: React.CSSProperties = { background: "#fff", border: "1px solid #f0bfca", color: "#c2415f", borderRadius: 6, padding: "6px 12px", fontWeight: 600, fontSize: 12, cursor: "pointer", fontFamily: "inherit" };
 const subTab: React.CSSProperties = { background: "#fff", border: "1px solid #e0e6e7", color: "#4a4f54", borderRadius: 8, padding: "8px 14px", fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: "inherit" };
 const subTabActive: React.CSSProperties = { ...subTab, background: "#0f343f", color: "#fff", borderColor: "#0f343f" };
+
+// ---- Recommendations (home banner) ----
+function Recommendations({ recommendations, call }: { recommendations: any[]; call: any }) {
+  const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState<any | null>(null);
+  function fmt(ts: any) { return ts ? new Date(ts).toLocaleString() : "—"; }
+  function liveNow(r: any) {
+    const now = Date.now();
+    if (r.status !== "active") return false;
+    if (r.startsAt && new Date(r.startsAt).getTime() > now) return false;
+    if (r.endsAt && new Date(r.endsAt).getTime() < now) return false;
+    return true;
+  }
+  return (
+    <>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+        <span style={{ fontSize: 13, color: "#8a9499" }}>{recommendations.length} recommendation(s) · the newest live one shows on the home page</span>
+        <button style={btnPrimary} onClick={() => setCreating(true)}>+ Add recommendation</button>
+      </div>
+      <Table head={["Title", "Window", "Status", "Impressions", "Clicks", ""]}>
+        {recommendations.map((r) => (
+          <tr key={r.id}>
+            <Td><b>{r.title}</b>{liveNow(r) && <span style={{ ...lblPill, marginLeft: 8 }}>LIVE</span>}</Td>
+            <Td style={{ fontSize: 11.5, color: "#8a9499" }}>{fmt(r.startsAt)} → {fmt(r.endsAt)}</Td>
+            <Td>{r.status === "active" ? <span style={{ color: "#3ea76a" }}>Active</span> : <span style={{ color: "#b0364f" }}>Paused</span>}</Td>
+            <Td>{r.impressions ?? 0}</Td>
+            <Td>{r.clicks ?? 0}</Td>
+            <Td>
+              <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+                <button style={btnGhost} onClick={() => setEditing(r)}>Edit</button>
+                <button style={btnDanger} onClick={() => { if (confirm(`Delete recommendation "${r.title}"? This cannot be undone.`)) call("/api/admin/recommendation", { id: r.id, action: "delete" }); }}>Delete</button>
+              </div>
+            </Td>
+          </tr>
+        ))}
+      </Table>
+      {recommendations.length === 0 && <p style={{ color: "#8a9499", fontSize: 14, padding: "24px 0" }}>No recommendations yet. Add one to show a banner on the home page.</p>}
+      {creating && <RecommendationDrawer onClose={() => setCreating(false)} call={call} />}
+      {editing && <RecommendationDrawer r={editing} onClose={() => setEditing(null)} call={call} />}
+    </>
+  );
+}
+
+// datetime-local <-> ISO helpers (the input wants "YYYY-MM-DDTHH:mm").
+function toLocalInput(ts: any): string {
+  if (!ts) return "";
+  const d = new Date(ts);
+  const off = d.getTimezoneOffset();
+  const local = new Date(d.getTime() - off * 60000);
+  return local.toISOString().slice(0, 16);
+}
+function fromLocalInput(v: string): string | null {
+  if (!v) return null;
+  return new Date(v).toISOString();
+}
+
+function RecommendationDrawer({ r, onClose, call }: { r?: any; onClose: () => void; call: any }) {
+  const isNew = !r;
+  const [title, setTitle] = useState(r?.title ?? "");
+  const [body, setBody] = useState(r?.body ?? "");
+  const [url, setUrl] = useState(r?.url ?? "");
+  const [ctaLabel, setCtaLabel] = useState(r?.ctaLabel ?? "Learn more");
+  const [startsAt, setStartsAt] = useState(toLocalInput(r?.startsAt));
+  const [endsAt, setEndsAt] = useState(toLocalInput(r?.endsAt));
+  const [status, setStatus] = useState(r?.status ?? "active");
+  async function save() {
+    if (!title.trim()) { alert("Please enter a title."); return; }
+    const fields = { title, body, url, ctaLabel, startsAt: fromLocalInput(startsAt), endsAt: fromLocalInput(endsAt), status };
+    const ok = isNew
+      ? await call("/api/admin/recommendation", { action: "create", fields })
+      : await call("/api/admin/recommendation", { id: r.id, action: "update", fields });
+    if (ok) onClose();
+  }
+  return (
+    <Drawer onClose={onClose} title={isNew ? "Add recommendation" : "Edit recommendation"}>
+      <Field label="Title"><input value={title} onChange={(e) => setTitle(e.target.value)} style={inp} placeholder="e.g. Featured this week: ESP32-S3 boards" /></Field>
+      <Field label="Description (Markdown: **bold**, *italic*, `code`, [link](url), - bullet)">
+        <textarea value={body} onChange={(e) => setBody(e.target.value)} style={{ ...inp, minHeight: 120, resize: "vertical", fontFamily: "ui-monospace, Menlo, monospace" }} placeholder={"Write a short pitch.\n\n- Point one\n- Point two\n\nSee **[the product](https://...)**."} />
+      </Field>
+      <Field label="Click-through URL (optional)"><input value={url} onChange={(e) => setUrl(e.target.value)} style={inp} placeholder="https://" /></Field>
+      <Field label="Button label"><input value={ctaLabel} onChange={(e) => setCtaLabel(e.target.value)} style={inp} placeholder="Learn more" /></Field>
+      <div style={{ display: "flex", gap: 10 }}>
+        <div style={{ flex: 1 }}><Field label="Starts at (optional)"><input type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} style={inp} /></Field></div>
+        <div style={{ flex: 1 }}><Field label="Ends at (optional)"><input type="datetime-local" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} style={inp} /></Field></div>
+      </div>
+      <Field label="Status">
+        <select value={status} onChange={(e) => setStatus(e.target.value)} style={inp}>
+          <option value="active">Active</option>
+          <option value="paused">Paused</option>
+        </select>
+      </Field>
+      <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
+        <button style={{ ...btnGhost, flex: 1 }} onClick={onClose}>Cancel</button>
+        <button style={{ ...btnPrimary, flex: 1 }} onClick={save}>{isNew ? "Create" : "Save changes"}</button>
+      </div>
+    </Drawer>
+  );
+}
+const lblPill: React.CSSProperties = { fontSize: 10, fontWeight: 700, background: "#e7f5ee", color: "#268a52", padding: "2px 7px", borderRadius: 5 };
