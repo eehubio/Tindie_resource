@@ -35,8 +35,8 @@ function Markdown({ text }: { text: string }) {
   const flush = () => {
     if (bullets.length) {
       out.push(
-        <ul key={`ul-${out.length}`} style={{ margin: "6px 0", paddingLeft: 20 }}>
-          {bullets.map((b, i) => <li key={i} style={{ marginBottom: 3 }}>{renderInline(b, `li-${out.length}-${i}`)}</li>)}
+        <ul key={`ul-${out.length}`} style={{ margin: "6px 0", paddingLeft: 22, listStyleType: "disc", listStylePosition: "outside" }}>
+          {bullets.map((b, i) => <li key={i} style={{ marginBottom: 3, display: "list-item", listStyleType: "disc" }}>{renderInline(b, `li-${out.length}-${i}`)}</li>)}
         </ul>
       );
       bullets = [];
