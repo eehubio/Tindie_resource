@@ -20,8 +20,8 @@ function renderInline(text: string, keyBase: string): React.ReactNode[] {
     if (m.index > last) nodes.push(text.slice(last, m.index));
     if (m[2] !== undefined) nodes.push(<strong key={`${keyBase}-b${i}`}>{m[2]}</strong>);
     else if (m[3] !== undefined) nodes.push(<em key={`${keyBase}-i${i}`}>{m[3]}</em>);
-    else if (m[4] !== undefined) nodes.push(<code key={`${keyBase}-c${i}`} style={{ background: "rgba(255,255,255,.2)", padding: "1px 5px", borderRadius: 4 }}>{m[4]}</code>);
-    else if (m[5] !== undefined) nodes.push(<a key={`${keyBase}-a${i}`} href={m[6]} target="_blank" rel="noreferrer" style={{ color: "#fff", textDecoration: "underline" }}>{m[5]}</a>);
+    else if (m[4] !== undefined) nodes.push(<code key={`${keyBase}-c${i}`} style={{ background: "#e3f3f5", color: "#1c6e7e", padding: "1px 5px", borderRadius: 4 }}>{m[4]}</code>);
+    else if (m[5] !== undefined) nodes.push(<a key={`${keyBase}-a${i}`} href={m[6]} target="_blank" rel="noreferrer" style={{ color: "#1c8693", fontWeight: 600, textDecoration: "underline" }}>{m[5]}</a>);
     last = m.index + m[0].length; i++;
   }
   if (last < text.length) nodes.push(text.slice(last));
@@ -78,13 +78,13 @@ export function RecommendationBanner({ rec }: { rec: Rec | null }) {
   }
 
   return (
-    <div style={{ marginTop: 16, background: "linear-gradient(135deg,#1c6e7e,#22b8c4)", borderRadius: 12, padding: "20px 22px", color: "#fff" }}>
-      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".6px", textTransform: "uppercase", opacity: .85, marginBottom: 6 }}>Recommended</div>
-      <h3 style={{ fontSize: 19, fontWeight: 700, margin: "0 0 6px" }}>{rec.title}</h3>
-      <div style={{ fontSize: 14, lineHeight: 1.55, opacity: .96 }}><Markdown text={rec.body} /></div>
+    <div style={{ marginTop: 16, background: "#f4fafb", border: "1px solid #d8edef", borderLeft: "4px solid #22b8c4", borderRadius: 12, padding: "18px 22px", color: "#3a4a4f" }}>
+      <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: ".6px", textTransform: "uppercase", color: "#1c8693", marginBottom: 6 }}>Recommended</div>
+      <h3 style={{ fontSize: 19, fontWeight: 700, margin: "0 0 6px", color: "#1f2d31" }}>{rec.title}</h3>
+      <div style={{ fontSize: 14, lineHeight: 1.55, color: "#4a5b60" }}><Markdown text={rec.body} /></div>
       {rec.url && (
         <a href={rec.url} target="_blank" rel="noreferrer" onClick={onClick}
-          style={{ display: "inline-block", marginTop: 12, background: "#fff", color: "#1c6e7e", fontWeight: 600, fontSize: 13.5, padding: "9px 18px", borderRadius: 8, textDecoration: "none" }}>
+          style={{ display: "inline-block", marginTop: 12, background: "#22b8c4", color: "#fff", fontWeight: 600, fontSize: 13.5, padding: "9px 18px", borderRadius: 8, textDecoration: "none" }}>
           {rec.ctaLabel || "Learn more"} →
         </a>
       )}
