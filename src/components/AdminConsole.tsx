@@ -409,6 +409,7 @@ function ResourceDrawer({ r, onClose, call }: { r: Res | null; onClose: () => vo
 
 function Sources({ sources, call }: { sources: Src[]; call: any }) {
   const [creating, setCreating] = useState(false);
+  const [editing, setEditing] = useState<Src | null>(null);
   return (
     <>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
@@ -424,6 +425,7 @@ function Sources({ sources, call }: { sources: Src[]; call: any }) {
             <Td>{s.status === "active" ? <span style={{ color: "#3ea76a" }}>Active</span> : <span style={{ color: "#b0364f" }}>Paused</span>}</Td>
             <Td>
               <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+                <button style={btnGhost} onClick={() => setEditing(s)}>Edit</button>
                 {s.status === "active"
                   ? <button style={btnGhost} onClick={() => call("/api/admin/source", { id: s.id, action: "toggle" })}>Pause</button>
                   : <button style={btnPrimary} onClick={() => call("/api/admin/source", { id: s.id, action: "toggle" })}>Resume</button>}
@@ -434,21 +436,27 @@ function Sources({ sources, call }: { sources: Src[]; call: any }) {
         ))}
       </Table>
       {creating && <SourceDrawer onClose={() => setCreating(false)} call={call} />}
+      {editing && <SourceDrawer s={editing} onClose={() => setEditing(null)} call={call} />}
     </>
   );
 }
-function SourceDrawer({ onClose, call }: { onClose: () => void; call: any }) {
-  const [name, setName] = useState("");
-  const [method, setMethod] = useState("RSS");
-  const [url, setUrl] = useState("https://");
-  const [trust, setTrust] = useState("Medium");
-  const [dailyCap, setDailyCap] = useState(2);
+function SourceDrawer({ s, onClose, call }: { s?: Src; onClose: () => void; call: any }) {
+  const isNew = !s;
+  const [name, setName] = useState(s?.name ?? "");
+  const [method, setMethod] = useState(s?.method ?? "RSS");
+  const [url, setUrl] = useState(s?.url ?? "https://");
+  const [trust, setTrust] = useState(s?.trust ?? "Medium");
+  const [dailyCap, setDailyCap] = useState(s?.dailyCap ?? 2);
   async function save() {
     if (!name.trim()) { alert("Please enter a source name."); return; }
-    if (await call("/api/admin/source", { action: "create", fields: { name, method, url, trust, dailyCap: Number(dailyCap) } })) onClose();
+    const fields = { name, method, url, trust, dailyCap: Number(dailyCap) };
+    const ok = isNew
+      ? await call("/api/admin/source", { action: "create", fields })
+      : await call("/api/admin/source", { id: s!.id, action: "update", fields });
+    if (ok) onClose();
   }
   return (
-    <Drawer onClose={onClose} title="Add source">
+    <Drawer onClose={onClose} title={isNew ? "Add source" : "Edit source"}>
       <Field label="Source name"><input value={name} onChange={(e) => setName(e.target.value)} style={inp} placeholder="e.g. Hackster.io" /></Field>
       <Field label="Method">
         <select value={method} onChange={(e) => setMethod(e.target.value)} style={inp}>
@@ -464,7 +472,7 @@ function SourceDrawer({ onClose, call }: { onClose: () => void; call: any }) {
       <Field label="Daily cap (max items/day)"><input type="number" value={dailyCap} onChange={(e) => setDailyCap(Number(e.target.value))} style={inp} min={1} /></Field>
       <div style={{ display: "flex", gap: 10, marginTop: 16 }}>
         <button style={{ ...btnGhost, flex: 1 }} onClick={onClose}>Cancel</button>
-        <button style={{ ...btnPrimary, flex: 1 }} onClick={save}>Create</button>
+        <button style={{ ...btnPrimary, flex: 1 }} onClick={save}>{isNew ? "Create" : "Save changes"}</button>
       </div>
     </Drawer>
   );

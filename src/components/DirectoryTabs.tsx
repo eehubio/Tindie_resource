@@ -2,6 +2,7 @@
 import { useState, useRef } from "react";
 import { BrandLogo } from "@/components/BrandLogo";
 import { TAXONOMY } from "@/lib/taxonomy";
+import { useHomeSearch, matchText } from "@/components/HomeSearch";
 
 const lbl = (bg: string, fg: string): React.CSSProperties => ({ fontSize: 10, fontWeight: 600, padding: "2px 7px", borderRadius: 5, background: bg, color: fg });
 
@@ -28,12 +29,16 @@ function Card({ r }: { r: any }) {
 
 // Browse-by-category icon cards + directory tabs + filtered grid, all sharing one selected category.
 export function BrowseAndDirectory({ resources }: { resources: any[] }) {
+  const { q } = useHomeSearch();
   const [cat, setCat] = useState<string>("all");
   const dirRef = useRef<HTMLDivElement>(null);
   const counts: Record<string, number> = {};
   resources.forEach((r) => { counts[r.category] = (counts[r.category] || 0) + 1; });
 
-  const filtered = cat === "all" ? resources : resources.filter((r) => r.category === cat);
+  const byCat = cat === "all" ? resources : resources.filter((r) => r.category === cat);
+  const filtered = q.trim()
+    ? byCat.filter((r) => matchText([r.name, r.description, r.capLabel, r.category].filter(Boolean).join(" "), q))
+    : byCat;
   const shown = filtered;
 
   function pick(id: string) {

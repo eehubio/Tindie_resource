@@ -4,8 +4,7 @@ import { DiscoveryGrid } from "@/components/Discovery";
 import { SubmitButton } from "@/components/PublicWidgets";
 import { FeaturedThisWeek } from "@/components/HomeSections";
 import { BrowseAndDirectory } from "@/components/DirectoryTabs";
-
-const HERO_CHIPS: [string, string, string][] = [["⬡", "Parts & Resources", "components"], ["✎", "Design & Develop", "tools"], ["🏭", "Manufacture", "manufacturing"], ["</>", "Learn & Share", "open-source"], ["◆", "Launch & Sell", "crowdfunding"]];
+import { HomeSearchProvider, HomeSearchInput } from "@/components/HomeSearch";
 
 // Shared home content. `chrome` controls whether the Tindie header/footer render.
 // The /embed route passes chrome={false} so the page can be iframed into tindie.com cleanly.
@@ -15,24 +14,16 @@ export function HomeBody({ resources, topDiscoveries, savedIds, signedIn, chrome
   return (
     <>
       {chrome && <TindieHeader />}
+      <HomeSearchProvider>
       <div style={{ background: "#fafdfd" }}>
         <div className="wrap" style={{ padding: "30px 24px 24px" }}>
           <h1 style={{ fontSize: 34, fontWeight: 700, letterSpacing: "-.5px", color: "#2f3438" }}>Resources for Hardware Creators</h1>
           <p style={{ fontSize: 15.5, color: "#6a7176", marginTop: 8, maxWidth: 640 }}>Discover trusted tools, platforms, manufacturing partners, and daily hardware discoveries for Tindie buyers and sellers.</p>
           <div className="hero-search-row" style={{ marginTop: 18, display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ flex: 1, display: "flex", alignItems: "center", background: "#fff", border: "1px solid #d6dee0", borderRadius: 9, padding: "3px 4px 3px 15px" }}>
-              <span style={{ color: "#8a9499" }}>🔍</span>
-              <input placeholder="Search resources…" style={{ flex: 1, border: 0, padding: "12px", fontSize: 15, outline: "none", background: "none" }} />
-            </div>
+            <HomeSearchInput />
             <SubmitButton />
           </div>
-          <div style={{ marginTop: 14, display: "flex", flexWrap: "wrap", gap: 8 }}>
-            {HERO_CHIPS.map(([ic, label, cat]) => (
-              <Link key={label} href={`/directory?cat=${cat}`} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, border: "1px solid #e0e6e7", background: "#fff", padding: "7px 12px", borderRadius: 8, color: "#1c6e7e" }}>
-                <span style={{ color: "#22b8c4" }}>{ic}</span>{label}
-              </Link>
-            ))}
-          </div>
+          {/* Category chips removed — slot reserved for the upcoming recommendation banner. */}
         </div>
       </div>
 
@@ -49,12 +40,13 @@ export function HomeBody({ resources, topDiscoveries, savedIds, signedIn, chrome
             <Link href="/archive" style={{ fontSize: 13.5, fontWeight: 600, color: "#1aa0ab" }}>View all discoveries →</Link>
           </div>
           <p style={{ color: "#8a9499", fontSize: 14, marginBottom: 18 }}>AI-curated daily picks: new products, tools, developer boards, and open-source projects.</p>
-          <DiscoveryGrid items={topDiscoveries as any} savedIds={savedIds} signedIn={signedIn} />
+          <DiscoveryGrid items={topDiscoveries as any} />
         </section>
 
         <BrowseAndDirectory resources={resources} />
         <div style={{ height: 40 }} />
       </div>
+      </HomeSearchProvider>
       {chrome && <TindieFooter />}
     </>
   );

@@ -1,20 +1,15 @@
 import Link from "next/link";
 import { TindieHeader, TindieFooter } from "@/components/Chrome";
 import { DiscoveryGrid } from "@/components/Discovery";
-import { getPublishDates, getDiscoveriesByDate, getUserSaves } from "@/lib/queries";
-import { auth } from "@/lib/auth";
+import { HomeSearchProvider } from "@/components/HomeSearch";
+import { getPublishDates, getDiscoveriesByDate } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 
 export default async function ArchivePage({ searchParams }: { searchParams: { date?: string } }) {
-  const session = await auth();
-  const userId = (session?.user as any)?.id as string | undefined;
   const dates = await getPublishDates();
   const active = searchParams.date && dates.includes(searchParams.date) ? searchParams.date : (dates[0] || new Date().toISOString().slice(0, 10));
-  const [items, savedIds] = await Promise.all([
-    getDiscoveriesByDate(active),
-    userId ? getUserSaves(userId) : Promise.resolve([] as number[]),
-  ]);
+  const items = await getDiscoveriesByDate(active);
 
   return (
     <>
@@ -38,7 +33,7 @@ export default async function ArchivePage({ searchParams }: { searchParams: { da
             );
           })}
         </div>
-        <DiscoveryGrid items={items as any} savedIds={savedIds} signedIn={!!userId} />
+        <HomeSearchProvider><DiscoveryGrid items={items as any} /></HomeSearchProvider>
       </div>
       <TindieFooter />
     </>

@@ -228,6 +228,17 @@ export async function deleteSource(id: number) {
   await db.delete(sources).where(eq(sources.id, id));
 }
 
+export async function updateSource(id: number, fields: { name?: string; method?: string; url?: string; trust?: string; dailyCap?: number }) {
+  const patch: Record<string, any> = {};
+  if (fields.name !== undefined) patch.name = fields.name;
+  if (fields.method !== undefined) patch.method = fields.method;
+  if (fields.url !== undefined) patch.url = fields.url || null;
+  if (fields.trust !== undefined) patch.trust = fields.trust;
+  if (fields.dailyCap !== undefined) patch.dailyCap = fields.dailyCap;
+  if (Object.keys(patch).length === 0) return;
+  await db.update(sources).set(patch).where(eq(sources.id, id));
+}
+
 export async function verifyResource(id: number, url?: string) {
   await db.update(resources)
     .set({ linkOk: true, isVerified: true, verifiedAt: new Date(), ...(url ? { url } : {}) })
