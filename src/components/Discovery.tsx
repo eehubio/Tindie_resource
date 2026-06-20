@@ -41,7 +41,7 @@ function DiscoveryCard({ d, onOpen }: { d: Discovery; onOpen: () => void }) {
         {(d.isSponsored || d.isPick) && (
           <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 7 }}>
             {d.isSponsored ? <span style={{ fontSize: 10, fontWeight: 600, background: "#fbf2dc", color: "#9a6b08", padding: "2px 7px", borderRadius: 4 }}>Sponsored</span>
-              : <span style={{ fontSize: 10, fontWeight: 600, background: "#fdebdf", color: "#c25a14", padding: "2px 7px", borderRadius: 4 }}>* Tindie Pick</span>}
+              : <span style={{ fontSize: 10, fontWeight: 600, background: "#fdebdf", color: "#c25a14", padding: "2px 7px", borderRadius: 4 }}>★ Tindie Pick</span>}
           </div>
         )}
         <h4 style={{ fontSize: 15.5, margin: "0 0 6px", color: "#2f3438", lineHeight: 1.3 }}>{d.title}</h4>
@@ -65,7 +65,7 @@ function DetailDrawer({ d, onClose }: { d: Discovery; onClose: () => void }) {
     : (typeof rawProducts === "string" && rawProducts.trim().startsWith("["))
       ? (() => { try { return JSON.parse(rawProducts); } catch { return []; } })()
       : [];
-  const manual = productList.map((p) => ({ t: p.name, s: p.seller || "", p: p.price || "", ic: "[#]", url: p.url || "" }));
+  const manual = productList.map((p) => ({ t: p.name, s: p.seller || "", p: p.price || "", ic: "🛒", url: p.url || "" }));
   const fallback = (d.relatedTags || []).flatMap((k) => RELATED_PRODUCTS[k] || []).map((r: any) => ({ ...r, url: "" }));
   const rel = manual.length > 0 ? manual : fallback;
 
@@ -78,7 +78,7 @@ function DetailDrawer({ d, onClose }: { d: Discovery; onClose: () => void }) {
       <div style={{ position: "fixed", top: 0, right: 0, width: 520, maxWidth: "100vw", height: "100vh", background: "#fff", zIndex: 31, overflowY: "auto" }}>
         <div style={{ position: "sticky", top: 0, background: "#fff", borderBottom: "1px solid #ececec", padding: "16px 20px", display: "flex", gap: 10, alignItems: "center" }}>
           <h2 style={{ fontSize: 16, flex: 1, color: "#2f3438" }}>Discovery</h2>
-          <button onClick={onClose} style={{ background: "none", border: 0, fontSize: 24, color: "#8a9499", cursor: "pointer" }}>x</button>
+          <button onClick={onClose} style={{ background: "none", border: 0, fontSize: 24, color: "#8a9499", cursor: "pointer" }}>×</button>
         </div>
         <div style={{ padding: 20 }}>
           {(d.isSponsored || d.isPick) && <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".5px", color: "#22b8c4", fontWeight: 600 }}>{d.isSponsored ? "Sponsored" : "Tindie Pick"}</div>}
@@ -94,13 +94,13 @@ function DetailDrawer({ d, onClose }: { d: Discovery; onClose: () => void }) {
           {rel.length > 0 && (
             <div style={{ border: "1px solid #ececec", borderRadius: 10, padding: 14, background: "#fafcfc", marginBottom: 20 }}>
               <h3 style={h3()}>Related products on Tindie</h3>
-              <div style={{ fontSize: 11.5, color: "#8a9499", marginBottom: 10 }}>Turn this discovery into a sale - modules and tools makers already sell.</div>
+              <div style={{ fontSize: 11.5, color: "#8a9499", marginBottom: 10 }}>Turn this discovery into a sale — modules and tools makers already sell.</div>
               {rel.map((r) => {
                 const inner = (
                   <>
                     <div style={{ width: 46, height: 46, borderRadius: 8, background: "#eef2f3", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20 }}>{r.ic}</div>
                     <div style={{ flex: 1 }}><div style={{ fontSize: 13, fontWeight: 600, color: "#2f3438" }}>{r.t}</div><div style={{ fontSize: 11.5, color: "#8a9499" }}>{r.s}{r.p ? <> · <span style={{ fontWeight: 700, color: "#f2762e" }}>{r.p}</span></> : null}</div></div>
-                    {r.url ? <span style={{ fontSize: 11, color: "#22b8c4", alignSelf: "center" }}>Visit</span> : null}
+                    {r.url ? <span style={{ fontSize: 11, color: "#22b8c4", alignSelf: "center" }}>Visit ↗</span> : null}
                   </>
                 );
                 return r.url
