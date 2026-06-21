@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { getPublishDates } from "@/lib/queries";
+import { getPublishDates, getAllTags } from "@/lib/queries";
 
 const SITE_URL = "https://resource.tindie.com";
 
@@ -8,10 +8,13 @@ export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   let dates: string[] = [];
+  let tags: string[] = [];
   try {
     dates = await getPublishDates();
+    tags = await getAllTags();
   } catch {
     dates = [];
+    tags = [];
   }
 
   const now = new Date();
@@ -29,5 +32,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.5,
   }));
 
-  return [...core, ...dated];
+  const tagged: MetadataRoute.Sitemap = tags.map((t) => ({
+    url: `${SITE_URL}/tag/${encodeURIComponent(t)}`,
+    lastModified: now,
+    changeFrequency: "weekly" as const,
+    priority: 0.4,
+  }));
+
+  return [...core, ...dated, ...tagged];
 }

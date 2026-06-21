@@ -19,6 +19,26 @@ export async function getDiscoveriesByDate(date: string) {
     .orderBy(desc(discoveries.aiScore));
 }
 
+// All published discoveries whose chips/tags include the given tag (case-insensitive).
+export async function getDiscoveriesByTag(tag: string) {
+  const wanted = tag.trim().toLowerCase();
+  const rows = await db.select().from(discoveries)
+    .where(eq(discoveries.status, "published"))
+    .orderBy(desc(discoveries.createdAt));
+  return rows.filter((d) => {
+    const chips = (d.chips as string[] | null) || [];
+    return chips.some((c) => (c || "").toLowerCase() === wanted);
+  });
+}
+
+// Distinct list of all tags in use across published discoveries (for the tag page / sitemap).
+export async function getAllTags(): Promise<string[]> {
+  const rows = await db.select().from(discoveries).where(eq(discoveries.status, "published"));
+  const set = new Set<string>();
+  rows.forEach((d) => ((d.chips as string[] | null) || []).forEach((c) => c && set.add(c)));
+  return Array.from(set).sort();
+}
+
 export async function getPublishDates(): Promise<string[]> {
   const rows = await db.selectDistinct({ d: discoveries.publishDate })
     .from(discoveries)

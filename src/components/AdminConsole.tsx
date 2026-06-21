@@ -411,31 +411,58 @@ function ResourceDrawer({ r, onClose, call }: { r: Res | null; onClose: () => vo
 function Sources({ sources, call }: { sources: Src[]; call: any }) {
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<Src | null>(null);
+  const [methodFilter, setMethodFilter] = useState<string>("all");
+
+  // Group by method (RSS | API | Crawl) for directory-style management.
+  const METHODS = ["RSS", "API", "Crawl"];
+  const counts: Record<string, number> = {};
+  sources.forEach((s) => { counts[s.method] = (counts[s.method] || 0) + 1; });
+  const shownMethods = methodFilter === "all" ? METHODS.filter((m) => counts[m]) : [methodFilter];
+  // Include any non-standard methods that exist in data but aren't in METHODS.
+  Object.keys(counts).forEach((m) => { if (!METHODS.includes(m) && (methodFilter === "all" || methodFilter === m) && !shownMethods.includes(m)) shownMethods.push(m); });
+
+  const row = (s: Src) => (
+    <tr key={s.id}>
+      <Td><b>{s.name}</b></Td><Td>{s.method}</Td>
+      <Td style={{ color: s.trust === "High" ? "#3ea76a" : s.trust === "Low" ? "#d8506a" : "#e0a020", fontWeight: 600 }}>{s.trust}</Td>
+      <Td>{s.dailyCap}/day</Td>
+      <Td>{s.status === "active" ? <span style={{ color: "#3ea76a" }}>Active</span> : <span style={{ color: "#b0364f" }}>Paused</span>}</Td>
+      <Td>
+        <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
+          <button style={btnGhost} onClick={() => setEditing(s)}>Edit</button>
+          {s.status === "active"
+            ? <button style={btnGhost} onClick={() => call("/api/admin/source", { id: s.id, action: "toggle" })}>Pause</button>
+            : <button style={btnPrimary} onClick={() => call("/api/admin/source", { id: s.id, action: "toggle" })}>Resume</button>}
+          <button style={btnDanger} onClick={() => { if (confirm(`Delete source "${s.name}"? This cannot be undone.`)) call("/api/admin/source", { id: s.id, action: "delete" }); }}>Delete</button>
+        </div>
+      </Td>
+    </tr>
+  );
+
   return (
     <>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
         <span style={{ fontSize: 13, color: "#8a9499" }}>{sources.length} sources</span>
         <button style={btnPrimary} onClick={() => setCreating(true)}>+ Add source</button>
       </div>
-      <Table head={["Source", "Method", "Trust", "Cap", "Status", ""]}>
-        {sources.map((s) => (
-          <tr key={s.id}>
-            <Td><b>{s.name}</b></Td><Td>{s.method}</Td>
-            <Td style={{ color: s.trust === "High" ? "#3ea76a" : s.trust === "Low" ? "#d8506a" : "#e0a020", fontWeight: 600 }}>{s.trust}</Td>
-            <Td>{s.dailyCap}/day</Td>
-            <Td>{s.status === "active" ? <span style={{ color: "#3ea76a" }}>Active</span> : <span style={{ color: "#b0364f" }}>Paused</span>}</Td>
-            <Td>
-              <div style={{ display: "flex", gap: 6, justifyContent: "flex-end" }}>
-                <button style={btnGhost} onClick={() => setEditing(s)}>Edit</button>
-                {s.status === "active"
-                  ? <button style={btnGhost} onClick={() => call("/api/admin/source", { id: s.id, action: "toggle" })}>Pause</button>
-                  : <button style={btnPrimary} onClick={() => call("/api/admin/source", { id: s.id, action: "toggle" })}>Resume</button>}
-                <button style={btnDanger} onClick={() => { if (confirm(`Delete source "${s.name}"? This cannot be undone.`)) call("/api/admin/source", { id: s.id, action: "delete" }); }}>Delete</button>
-              </div>
-            </Td>
-          </tr>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
+        <button onClick={() => setMethodFilter("all")} style={srcPill(methodFilter === "all")}>All <span style={{ opacity: .6 }}>{sources.length}</span></button>
+        {METHODS.filter((m) => counts[m]).map((m) => (
+          <button key={m} onClick={() => setMethodFilter(m)} style={srcPill(methodFilter === m)}>{m} <span style={{ opacity: .6 }}>{counts[m]}</span></button>
         ))}
-      </Table>
+      </div>
+      {shownMethods.map((m) => {
+        const group = sources.filter((s) => s.method === m);
+        if (group.length === 0) return null;
+        return (
+          <div key={m} style={{ marginBottom: 22 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", color: "#1c6e7e", marginBottom: 8 }}>{m} <span style={{ color: "#aab4b6" }}>· {group.length}</span></div>
+            <Table head={["Source", "Method", "Trust", "Cap", "Status", ""]}>
+              {group.map(row)}
+            </Table>
+          </div>
+        );
+      })}
       {creating && <SourceDrawer onClose={() => setCreating(false)} call={call} />}
       {editing && <SourceDrawer s={editing} onClose={() => setEditing(null)} call={call} />}
     </>
@@ -620,3 +647,4 @@ function RecommendationDrawer({ r, onClose, call }: { r?: any; onClose: () => vo
   );
 }
 const lblPill: React.CSSProperties = { fontSize: 10, fontWeight: 700, background: "#e7f5ee", color: "#268a52", padding: "2px 7px", borderRadius: 5 };
+const srcPill = (active: boolean): React.CSSProperties => ({ fontSize: 12.5, padding: "7px 13px", borderRadius: 8, border: "1px solid #e3e9eb", background: active ? "#1c6e7e" : "#fff", color: active ? "#fff" : "#5a6b72", cursor: "pointer", fontFamily: "inherit", fontWeight: 600 });

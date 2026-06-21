@@ -1,5 +1,6 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import Link from "next/link";
 import { RELATED_PRODUCTS } from "@/lib/taxonomy";
 import { useHomeSearch, matchText } from "@/components/HomeSearch";
 
@@ -59,6 +60,13 @@ function DiscoveryCard({ d, onOpen }: { d: Discovery; onOpen: () => void }) {
 }
 
 function DetailDrawer({ d, onClose }: { d: Discovery; onClose: () => void }) {
+  // While the detail drawer is open, hide the fixed bottom tab bar so it
+  // doesn't cover the drawer's content. BottomTabBar listens for this event.
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent("tindie:drawer", { detail: { open: true } }));
+    return () => window.dispatchEvent(new CustomEvent("tindie:drawer", { detail: { open: false } }));
+  }, []);
+
   const rawProducts: any = (d as any).relatedProducts;
   const productList: { name: string; seller?: string; price?: string; url?: string }[] =
     Array.isArray(rawProducts) ? rawProducts
@@ -96,7 +104,7 @@ function DetailDrawer({ d, onClose }: { d: Discovery; onClose: () => void }) {
             const parts = [lic && `License: ${lic}`, avail && `Availability: ${avail}`].filter(Boolean);
             return <Block h="At a glance"><p style={{ fontSize: 13, color: "#8a9499" }}>{parts.join(" · ")}</p></Block>;
           })()}
-          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 18 }}>{(d.chips || []).map((c) => <span key={c} style={{ fontSize: 11, background: "#f0f5f6", color: "#1c6e7e", padding: "3px 9px", borderRadius: 5 }}>{c}</span>)}</div>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 18 }}>{(d.chips || []).map((c) => <Link key={c} href={`/tag/${encodeURIComponent(c)}`} style={{ fontSize: 11, background: "#e9f5f6", color: "#1c6e7e", padding: "3px 9px", borderRadius: 5, textDecoration: "none", cursor: "pointer" }}>#{c}</Link>)}</div>
           {rel.length > 0 && (
             <div style={{ border: "1px solid #ececec", borderRadius: 10, padding: 14, background: "#fafcfc", marginBottom: 20 }}>
               <h3 style={h3()}>Related products on Tindie</h3>

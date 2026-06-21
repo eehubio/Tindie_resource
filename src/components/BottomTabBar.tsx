@@ -11,6 +11,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
 
 type Tab = {
   key: string;
@@ -70,6 +71,15 @@ const TABS: Tab[] = [
 
 export default function BottomTabBar() {
   const pathname = usePathname();
+  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // A detail drawer (e.g. a discovery) dispatches this event; hide the bar
+  // while one is open so it doesn't cover the drawer content.
+  useEffect(() => {
+    const onDrawer = (e: Event) => setDrawerOpen(!!(e as CustomEvent).detail?.open);
+    window.addEventListener('tindie:drawer', onDrawer as EventListener);
+    return () => window.removeEventListener('tindie:drawer', onDrawer as EventListener);
+  }, []);
 
   // Hide the tab bar on admin/login, and on /embed (which is iframed into
   // tindie.com with the host's own header/footer — no app shell there).
@@ -80,6 +90,9 @@ export default function BottomTabBar() {
   ) {
     return null;
   }
+
+  // Hide while a detail drawer is open.
+  if (drawerOpen) return null;
 
   return (
     <>

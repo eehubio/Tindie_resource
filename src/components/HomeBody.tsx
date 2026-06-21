@@ -20,12 +20,12 @@ export function HomeBody({ resources, topDiscoveries, savedIds, signedIn, recomm
         <div className="wrap" style={{ padding: "30px 24px 24px" }}>
           <h1 style={{ fontSize: 34, fontWeight: 700, letterSpacing: "-.5px", color: "#2f3438" }}>Hardware Discovery</h1>
           <p style={{ fontSize: 15.5, color: "#6a7176", marginTop: 8, maxWidth: 640 }}>New products, tools, open-source projects, and trusted resources for hardware creators.</p>
-          <div className="hero-search-row" style={{ marginTop: 18, display: "flex", alignItems: "center", gap: 12 }}>
+          {/* Recommendation banner first, then the search row below it. */}
+          <RecommendationBanner rec={recommendation || null} />
+          <div className="hero-search-row" style={{ marginTop: 16, display: "flex", alignItems: "center", gap: 12 }}>
             <HomeSearchInput />
             <SubmitButton />
           </div>
-          {/* Recommendation banner — full width, editor-managed, replaces old category chips. */}
-          <RecommendationBanner rec={recommendation || null} />
         </div>
       </div>
 
