@@ -64,7 +64,7 @@ function DetailDrawer({ d, onClose }: { d: Discovery; onClose: () => void }) {
   // doesn't cover the drawer's content. BottomTabBar listens for this event.
   useEffect(() => {
     window.dispatchEvent(new CustomEvent("tindie:drawer", { detail: { open: true } }));
-    return () => window.dispatchEvent(new CustomEvent("tindie:drawer", { detail: { open: false } }));
+    return () => { window.dispatchEvent(new CustomEvent("tindie:drawer", { detail: { open: false } })); };
   }, []);
 
   const rawProducts: any = (d as any).relatedProducts;
