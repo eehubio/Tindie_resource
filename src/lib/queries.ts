@@ -233,11 +233,12 @@ export async function toggleSource(id: number) {
   return next;
 }
 
-export async function createSource(fields: { name: string; method?: string; url?: string; trust?: string; dailyCap?: number }) {
+export async function createSource(fields: { name: string; method?: string; url?: string; trust?: string; dailyCap?: number; category?: string }) {
   await db.insert(sources).values({
     name: fields.name,
     method: fields.method || "RSS",
     url: fields.url || null,
+    category: fields.category || null,
     trust: fields.trust || "Medium",
     dailyCap: fields.dailyCap ?? 2,
     status: "active",
@@ -248,13 +249,14 @@ export async function deleteSource(id: number) {
   await db.delete(sources).where(eq(sources.id, id));
 }
 
-export async function updateSource(id: number, fields: { name?: string; method?: string; url?: string; trust?: string; dailyCap?: number }) {
+export async function updateSource(id: number, fields: { name?: string; method?: string; url?: string; trust?: string; dailyCap?: number; category?: string }) {
   const patch: Record<string, any> = {};
   if (fields.name !== undefined) patch.name = fields.name;
   if (fields.method !== undefined) patch.method = fields.method;
   if (fields.url !== undefined) patch.url = fields.url || null;
   if (fields.trust !== undefined) patch.trust = fields.trust;
   if (fields.dailyCap !== undefined) patch.dailyCap = fields.dailyCap;
+  if (fields.category !== undefined) patch.category = fields.category || null;
   if (Object.keys(patch).length === 0) return;
   await db.update(sources).set(patch).where(eq(sources.id, id));
 }

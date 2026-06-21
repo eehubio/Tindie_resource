@@ -75,6 +75,7 @@ export const sources = pgTable("sources", {
   name: text("name").notNull(),
   method: varchar("method", { length: 20 }).notNull(), // RSS | API | Crawl
   url: text("url"),
+  category: varchar("category", { length: 40 }),       // taxonomy id, same set as resources
   frequency: text("frequency"),       // e.g. '6h'
   trust: varchar("trust", { length: 10 }).default("Medium"), // High|Medium|Low
   dailyCap: integer("daily_cap").default(2),

@@ -411,15 +411,15 @@ function ResourceDrawer({ r, onClose, call }: { r: Res | null; onClose: () => vo
 function Sources({ sources, call }: { sources: Src[]; call: any }) {
   const [creating, setCreating] = useState(false);
   const [editing, setEditing] = useState<Src | null>(null);
-  const [methodFilter, setMethodFilter] = useState<string>("all");
+  const [catFilter, setCatFilter] = useState<string>("all");
 
-  // Group by method (RSS | API | Crawl) for directory-style management.
-  const METHODS = ["RSS", "API", "Crawl"];
+  // Group by taxonomy category (same set as the Resource Directory).
   const counts: Record<string, number> = {};
-  sources.forEach((s) => { counts[s.method] = (counts[s.method] || 0) + 1; });
-  const shownMethods = methodFilter === "all" ? METHODS.filter((m) => counts[m]) : [methodFilter];
-  // Include any non-standard methods that exist in data but aren't in METHODS.
-  Object.keys(counts).forEach((m) => { if (!METHODS.includes(m) && (methodFilter === "all" || methodFilter === m) && !shownMethods.includes(m)) shownMethods.push(m); });
+  sources.forEach((s) => { const c = (s as any).category || "uncategorized"; counts[c] = (counts[c] || 0) + 1; });
+  // Ordered list of category ids that actually have sources, plus uncategorized last.
+  const catIds = [...TAXONOMY.map((t: any) => t.id).filter((id: string) => counts[id]), ...(counts["uncategorized"] ? ["uncategorized"] : [])];
+  const shownCats = catFilter === "all" ? catIds : [catFilter];
+  const catLabel = (id: string) => id === "uncategorized" ? "Uncategorized" : taxName(id);
 
   const row = (s: Src) => (
     <tr key={s.id}>
@@ -446,17 +446,17 @@ function Sources({ sources, call }: { sources: Src[]; call: any }) {
         <button style={btnPrimary} onClick={() => setCreating(true)}>+ Add source</button>
       </div>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 16 }}>
-        <button onClick={() => setMethodFilter("all")} style={srcPill(methodFilter === "all")}>All <span style={{ opacity: .6 }}>{sources.length}</span></button>
-        {METHODS.filter((m) => counts[m]).map((m) => (
-          <button key={m} onClick={() => setMethodFilter(m)} style={srcPill(methodFilter === m)}>{m} <span style={{ opacity: .6 }}>{counts[m]}</span></button>
+        <button onClick={() => setCatFilter("all")} style={srcPill(catFilter === "all")}>All <span style={{ opacity: .6 }}>{sources.length}</span></button>
+        {catIds.map((id) => (
+          <button key={id} onClick={() => setCatFilter(id)} style={srcPill(catFilter === id)}>{catLabel(id)} <span style={{ opacity: .6 }}>{counts[id]}</span></button>
         ))}
       </div>
-      {shownMethods.map((m) => {
-        const group = sources.filter((s) => s.method === m);
+      {shownCats.map((id) => {
+        const group = sources.filter((s) => ((s as any).category || "uncategorized") === id);
         if (group.length === 0) return null;
         return (
-          <div key={m} style={{ marginBottom: 22 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", color: "#1c6e7e", marginBottom: 8 }}>{m} <span style={{ color: "#aab4b6" }}>· {group.length}</span></div>
+          <div key={id} style={{ marginBottom: 22 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".5px", color: id === "uncategorized" ? "#9aa4a6" : "#1c6e7e", marginBottom: 8 }}>{catLabel(id)} <span style={{ color: "#aab4b6" }}>· {group.length}</span></div>
             <Table head={["Source", "Method", "Trust", "Cap", "Status", ""]}>
               {group.map(row)}
             </Table>
@@ -475,9 +475,10 @@ function SourceDrawer({ s, onClose, call }: { s?: Src; onClose: () => void; call
   const [url, setUrl] = useState(s?.url ?? "https://");
   const [trust, setTrust] = useState(s?.trust ?? "Medium");
   const [dailyCap, setDailyCap] = useState(s?.dailyCap ?? 2);
+  const [category, setCategory] = useState((s as any)?.category ?? "");
   async function save() {
     if (!name.trim()) { alert("Please enter a source name."); return; }
-    const fields = { name, method, url, trust, dailyCap: Number(dailyCap) };
+    const fields = { name, method, url, trust, dailyCap: Number(dailyCap), category };
     const ok = isNew
       ? await call("/api/admin/source", { action: "create", fields })
       : await call("/api/admin/source", { id: s!.id, action: "update", fields });
@@ -486,6 +487,12 @@ function SourceDrawer({ s, onClose, call }: { s?: Src; onClose: () => void; call
   return (
     <Drawer onClose={onClose} title={isNew ? "Add source" : "Edit source"}>
       <Field label="Source name"><input value={name} onChange={(e) => setName(e.target.value)} style={inp} placeholder="e.g. Hackster.io" /></Field>
+      <Field label="Category">
+        <select value={category} onChange={(e) => setCategory(e.target.value)} style={inp}>
+          <option value="">Uncategorized</option>
+          {TAXONOMY.map((t: any) => <option key={t.id} value={t.id}>{t.name}</option>)}
+        </select>
+      </Field>
       <Field label="Method">
         <select value={method} onChange={(e) => setMethod(e.target.value)} style={inp}>
           <option>RSS</option><option>API</option><option>Crawl</option>
