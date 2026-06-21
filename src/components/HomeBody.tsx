@@ -18,8 +18,8 @@ export function HomeBody({ resources, topDiscoveries, savedIds, signedIn, recomm
       <HomeSearchProvider>
       <div style={{ background: "#fafdfd" }}>
         <div className="wrap" style={{ padding: "30px 24px 24px" }}>
-          <h1 style={{ fontSize: 34, fontWeight: 700, letterSpacing: "-.5px", color: "#2f3438" }}>Resources for Hardware Creators</h1>
-          <p style={{ fontSize: 15.5, color: "#6a7176", marginTop: 8, maxWidth: 640 }}>Discover trusted tools, platforms, manufacturing partners, and daily hardware discoveries for Tindie buyers and sellers.</p>
+          <h1 style={{ fontSize: 34, fontWeight: 700, letterSpacing: "-.5px", color: "#2f3438" }}>Hardware Discovery</h1>
+          <p style={{ fontSize: 15.5, color: "#6a7176", marginTop: 8, maxWidth: 640 }}>New products, tools, open-source projects, and trusted resources for hardware creators.</p>
           <div className="hero-search-row" style={{ marginTop: 18, display: "flex", alignItems: "center", gap: 12 }}>
             <HomeSearchInput />
             <SubmitButton />

@@ -89,7 +89,13 @@ function DetailDrawer({ d, onClose }: { d: Discovery; onClose: () => void }) {
           )}
           <Block h="What it is"><Bullets text={d.summary} /></Block>
           <div style={{ background: "#eef7f8", borderRadius: 9, padding: "13px 15px", marginBottom: 18 }}><h3 style={h3()}>Insights</h3><Bullets text={d.why} fontSize={14} /></div>
-          <Block h="At a glance"><p style={{ fontSize: 13, color: "#8a9499" }}>License: {d.license} · Availability: {d.availability}</p></Block>
+          {(() => {
+            const lic = (d.license || "").trim();
+            const avail = (d.availability || "").trim();
+            if (!lic && !avail) return null;
+            const parts = [lic && `License: ${lic}`, avail && `Availability: ${avail}`].filter(Boolean);
+            return <Block h="At a glance"><p style={{ fontSize: 13, color: "#8a9499" }}>{parts.join(" · ")}</p></Block>;
+          })()}
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 18 }}>{(d.chips || []).map((c) => <span key={c} style={{ fontSize: 11, background: "#f0f5f6", color: "#1c6e7e", padding: "3px 9px", borderRadius: 5 }}>{c}</span>)}</div>
           {rel.length > 0 && (
             <div style={{ border: "1px solid #ececec", borderRadius: 10, padding: 14, background: "#fafcfc", marginBottom: 20 }}>
