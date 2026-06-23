@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { DiscoveryGrid } from "@/components/Discovery";
 import { HomeSearchProvider } from "@/components/HomeSearch";
-import { TindieHeader, TindieFooter } from "@/components/Chrome";
 import { getDiscoveriesByTag } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
@@ -20,7 +19,6 @@ export default async function TagPage({ params }: { params: { tag: string } }) {
 
   return (
     <>
-      <TindieHeader />
       <div style={{ background: "#fafdfd" }}>
         <div className="wrap" style={{ padding: "30px 24px 18px" }}>
           <Link href="/" style={{ fontSize: 13.5, fontWeight: 600, color: "#1aa0ab", textDecoration: "none" }}>← Back to discoveries</Link>
@@ -43,7 +41,6 @@ export default async function TagPage({ params }: { params: { tag: string } }) {
           </HomeSearchProvider>
         )}
       </div>
-      <TindieFooter />
     </>
   );
 }
