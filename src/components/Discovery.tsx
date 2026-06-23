@@ -65,15 +65,21 @@ function DetailDrawer({ d, onClose }: { d: Discovery; onClose: () => void }) {
   useEffect(() => {
     window.dispatchEvent(new CustomEvent("tindie:drawer", { detail: { open: true } }));
     // Lock the background page scroll so only the drawer scrolls (fixes the
-    // double-scrollbar where the page scrolled behind the drawer).
+    // double-scrollbar where the page scrolled behind the drawer). To avoid
+    // the page shifting when the scrollbar disappears, pad the body by the
+    // scrollbar's width.
+    const scrollbarW = window.innerWidth - document.documentElement.clientWidth;
     const prevOverflow = document.body.style.overflow;
+    const prevPadding = document.body.style.paddingRight;
     document.body.style.overflow = "hidden";
+    if (scrollbarW > 0) document.body.style.paddingRight = `${scrollbarW}px`;
     // Close on Escape for convenience.
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", onKey);
     return () => {
       window.dispatchEvent(new CustomEvent("tindie:drawer", { detail: { open: false } }));
       document.body.style.overflow = prevOverflow;
+      document.body.style.paddingRight = prevPadding;
       window.removeEventListener("keydown", onKey);
     };
   }, [onClose]);

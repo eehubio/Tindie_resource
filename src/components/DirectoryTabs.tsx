@@ -70,7 +70,7 @@ export function BrowseAndDirectory({ resources }: { resources: any[] }) {
                 display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
                 cursor: "pointer", fontFamily: "inherit",
               }}>
-              <div style={{ width: 44, height: 44, borderRadius: 11, background: `${t.col}1a`, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, color: t.col }}>{t.ic}</div>
+              <img src={`/cat/${t.id}.png`} alt={t.name} width={56} height={56} style={{ width: 56, height: 56, borderRadius: 12, display: "block", objectFit: "cover" }} />
               <h4 style={{ fontSize: 13, fontWeight: 600, color: "#2f3438", lineHeight: 1.25 }}>{t.name}</h4>
               <p style={{ fontSize: 11.5, color: "#8a9499" }}>{counts[t.id] || 0} resources</p>
             </button>
