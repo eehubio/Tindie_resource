@@ -64,8 +64,19 @@ function DetailDrawer({ d, onClose }: { d: Discovery; onClose: () => void }) {
   // doesn't cover the drawer's content. BottomTabBar listens for this event.
   useEffect(() => {
     window.dispatchEvent(new CustomEvent("tindie:drawer", { detail: { open: true } }));
-    return () => { window.dispatchEvent(new CustomEvent("tindie:drawer", { detail: { open: false } })); };
-  }, []);
+    // Lock the background page scroll so only the drawer scrolls (fixes the
+    // double-scrollbar where the page scrolled behind the drawer).
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    // Close on Escape for convenience.
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      window.dispatchEvent(new CustomEvent("tindie:drawer", { detail: { open: false } }));
+      document.body.style.overflow = prevOverflow;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [onClose]);
 
   const rawProducts: any = (d as any).relatedProducts;
   const productList: { name: string; seller?: string; price?: string; url?: string }[] =
@@ -83,7 +94,7 @@ function DetailDrawer({ d, onClose }: { d: Discovery; onClose: () => void }) {
   return (
     <>
       <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.4)", zIndex: 30 }} />
-      <div style={{ position: "fixed", top: 0, right: 0, width: 520, maxWidth: "100vw", height: "100vh", background: "#fff", zIndex: 31, overflowY: "auto" }}>
+      <div style={{ position: "fixed", top: 0, right: 0, width: "min(520px, 100vw)", height: "100vh", background: "#fff", zIndex: 31, overflowY: "auto", WebkitOverflowScrolling: "touch", boxShadow: "-8px 0 30px rgba(0,0,0,.12)" }}>
         <div style={{ position: "sticky", top: 0, background: "#fff", borderBottom: "1px solid #ececec", padding: "16px 20px", display: "flex", gap: 10, alignItems: "center" }}>
           <h2 style={{ fontSize: 16, flex: 1, color: "#2f3438" }}>Discovery</h2>
           <button onClick={onClose} style={{ background: "none", border: 0, fontSize: 24, color: "#8a9499", cursor: "pointer" }}>×</button>
@@ -97,6 +108,9 @@ function DetailDrawer({ d, onClose }: { d: Discovery; onClose: () => void }) {
           )}
           <Block h="What it is"><Bullets text={d.summary} /></Block>
           <div style={{ background: "#eef7f8", borderRadius: 9, padding: "13px 15px", marginBottom: 18 }}><h3 style={h3()}>Insights</h3><Bullets text={d.why} fontSize={14} /></div>
+          {d.sourceUrl && (
+            <a href={d.sourceUrl} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13.5, fontWeight: 600, color: "#fff", background: "#22b8c4", borderRadius: 8, padding: "9px 16px", textDecoration: "none", marginBottom: 18 }}>Read original on {d.sourceName} ↗</a>
+          )}
           {(() => {
             const lic = (d.license || "").trim();
             const avail = (d.availability || "").trim();
