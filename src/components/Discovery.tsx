@@ -95,11 +95,7 @@ function DetailDrawer({ d, onClose }: { d: Discovery; onClose: () => void }) {
     <>
       <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.4)", zIndex: 30 }} />
       <div style={{ position: "fixed", top: 0, right: 0, width: "min(520px, 100vw)", height: "100vh", background: "#fff", zIndex: 31, overflowY: "auto", WebkitOverflowScrolling: "touch", boxShadow: "-8px 0 30px rgba(0,0,0,.12)" }}>
-        <div style={{ position: "sticky", top: 0, background: "#fff", borderBottom: "1px solid #ececec", padding: "16px 20px", display: "flex", gap: 10, alignItems: "center" }}>
-          <h2 style={{ fontSize: 16, flex: 1, color: "#2f3438" }}>Discovery</h2>
-          <button onClick={onClose} style={{ background: "none", border: 0, fontSize: 24, color: "#8a9499", cursor: "pointer" }}>×</button>
-        </div>
-        <div style={{ padding: 20 }}>
+        <div style={{ padding: "28px 20px 20px" }}>
           {(d.isSponsored || d.isPick) && <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: ".5px", color: "#22b8c4", fontWeight: 600 }}>{d.isSponsored ? "Sponsored" : "Tindie Pick"}</div>}
           <div style={{ fontSize: 22, fontWeight: 600, color: "#2f3438", margin: "6px 0 4px" }}>{d.title}</div>
           <div style={{ fontSize: 12.5, color: "#8a9499", marginBottom: 16 }}><b>{d.sourceName}</b> · curated</div>
