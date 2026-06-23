@@ -86,7 +86,8 @@ export default function BottomTabBar() {
   if (
     pathname?.startsWith('/admin') ||
     pathname?.startsWith('/login') ||
-    pathname?.startsWith('/embed')
+    pathname?.startsWith('/embed') ||
+    pathname?.startsWith('/tag')
   ) {
     return null;
   }
